@@ -4,7 +4,7 @@ import yastn
 import yastn.tn.mps as mps
 from ._hamiltonians import SpinlessFermions2ch, local_operators,  initial_position
 
-from ._hamiltonians import Hamiltonian_dpt_2U_mixed, Hamiltonian_dpt_2U_position,  Hamiltonian_dpt_4U_position, Hamiltonian_dpt_RLM_position, Hamiltonian_dpt_RLM_4U_position
+from ._hamiltonians import Hamiltonian_dpt_4U_mixed, Hamiltonian_dpt_2U_position,  Hamiltonian_dpt_4U_position, Hamiltonian_dpt_RLM_position, Hamiltonian_dpt_RLM_4U_position
 from ._files import param_hamiltonian, fname_hamiltonian, param_gs, fname_gs, fname_quench
 
 @ray.remote
@@ -24,18 +24,12 @@ def generate_Hamiltonian(param):
         i2s = data["i2s"]
         return H, s2i, i2s
 
-    if param["basis"] == 'mixed':
-        gH = Hamiltonian_dpt_2U_mixed
-    elif param["basis"] == '2U_position':
-        gH = Hamiltonian_dpt_2U_position
-    elif param["basis"] == '4U_position':
-        gH = Hamiltonian_dpt_4U_position
-    elif param["basis"] == 'RLM_position':
-        gH = Hamiltonian_dpt_RLM_position
-    elif param["basis"] == 'RLM_4U_position':
-        gH = Hamiltonian_dpt_RLM_4U_position
-    else:
-        raise ValueError("basis sohuld be in ['position', 'mixed']")
+    gHs = {'4U_mixed': Hamiltonian_dpt_4U_mixed,
+           '2U_position': Hamiltonian_dpt_2U_position,
+           '4U_position': Hamiltonian_dpt_4U_position,
+           'RLM_position': Hamiltonian_dpt_RLM_position,
+           'RLM_4U_position': Hamiltonian_dpt_RLM_4U_position}
+    gH = gHs[param["basis"]]
 
     H, s2i, i2s = gH(NW=param["NW"],
                      muL=param["muL"],
@@ -52,6 +46,7 @@ def generate_Hamiltonian(param):
             "H": H.save_to_dict(),
             "s2i": s2i,
             "i2s": i2s}
+
     with open(fname, 'wb') as f:
         np.save(f, data, allow_pickle=True)
 

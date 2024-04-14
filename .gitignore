@@ -1,5 +1,9 @@
 # Do not save npy data files and output files
 *.npy
+*.pdf
+*.png
+*.txt
+*.ipynb
 out/*
 
 # Byte-compiled / optimized / DLL files

@@ -6,23 +6,25 @@ from routines import generate_Hamiltonian, generate_gs, generate_quench
 
 def main_gs():
     to_scan = []
-    for vS in [1.0]:
-        for U in [2.0, 5.0]:
+    for vS in [0.0]:
+        for U in [2.0,]:
             for NW in [16]:
-                param0 = {'basis': '4U_position',
-                          'order': 'SLR',
+                param0 = {'basis': '4U_mixed',
+                          'order': 'mixed_0.5',
+                          # 'basis': '4U_position',
+                          # 'order': 'SLR',
                           'NW': NW,
                           'muL': 0.0,
                           'muR': 0.0,
                           'muS': 0.0,
-                          'dmuS': -10.0,
+                          'dmuS': -99.0,
                           'vS': vS,
                           'U': U,
                           'sym': 'U1xU1',
                           'w0': 1.0,
-                          'occS': 1, # NW // 2,
+                          'occS': 1,
                           'occLR': NW,
-                          'states': 2,
+                          'states': 1,
                           'max_sweeps2': 8,
                           'max_sweeps1': 64,
                           'Schmidt_tol': 1e-6,
@@ -45,23 +47,25 @@ def main_evol():
 
     refs = []
 
-    for vS in [1.0]:
+    for vS in [0.0]:
         for U in [2.0, 5.0]:
             for NW in [16]:
-                param0 = {'basis': '4U_position',
-                          'order': 'SLR',
+                param0 = {'basis': '4U_mixed',
+                          'order': 'mixed_0.5',
+                          # 'basis': '4U_position',
+                          # 'order': 'SLR',
                           'NW': NW,
                           'muL': 0.0,
                           'muR': 0.0,
                           'muS': 0.0,
-                          'dmuS': -10.0,
+                          'dmuS': -99.0,
                           'vS': vS,
                           'U': U,
                           'sym': 'U1xU1',
                           'w0': 1.0,
                           'occS': 1,
                           'occLR': NW,
-                          'states': 2,
+                          'states': 1,
                           'max_sweeps2': 8,
                           'max_sweeps1': 64,
                           'Schmidt_tol': 1e-6,
@@ -70,6 +74,9 @@ def main_evol():
                 param1 = param0.copy()
                 param1["U"] = U
                 param1["dmuS"] = 0.0
+                param1["muL"] = -0.25
+                param1["muR"] = 0.25
+
                 param1["tolS"] = 1e-6
                 param1["D0"] = 32
                 param1["D1"] = 32
@@ -83,4 +90,4 @@ def main_evol():
 
 if __name__ == '__main__':
     main_gs()
-    main_evol()
+    # main_evol()

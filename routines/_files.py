@@ -1,11 +1,10 @@
 from pathlib import Path
 import json, hashlib
 
-PARAM_HAMILTONIAN = ["basis", "order", "NW", "muL", "muR", "muS", "dmuS", "vS", "U", "sym"]
+PARAM_HAMILTONIAN = ["basis", "order", "NW", "muL", "muR", "muS", "dmuS", "vS", "U", "w0", "sym"]
 
 PARAM_GS = PARAM_HAMILTONIAN.copy()
 PARAM_GS.extend(["occS", "occLR"])
-
 
 PARAM_QUENCH = PARAM_GS.copy()
 PARAM_QUENCH.extend(["D0", "D1", "dt", "tolS", "time"])
