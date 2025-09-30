@@ -1,0 +1,151 @@
+\documentclass[tikz]{standalone}
+\usepackage{pgfplots}
+\usetikzlibrary{arrows.meta}
+\pgfplotsset{%
+compat=newest,%
+legend image code/.code={%
+\draw[mark repeat=2,mark phase=2]%
+plot coordinates {%
+(0cm,0cm) %
+(0.2cm,0cm)        %% default is (0.3cm,0cm)
+(0.4cm,0cm)         %% default is (0.6cm,0cm)
+};%
+}%
+}%
+%
+\definecolor{cb0}{rgb}{0.0039215, 0.4509803, 0.6980392}
+\definecolor{cb1}{rgb}{0.8705882, 0.5607843, 0.0196078}
+\definecolor{cb2}{rgb}{0.0078431, 0.6196078, 0.4509803}
+\definecolor{cb3}{rgb}{0.8352941, 0.3686274, 0.0000000}
+\definecolor{cb4}{rgb}{0.8000000, 0.4705882, 0.7372549}
+\definecolor{cb5}{rgb}{0.7921568, 0.5686274, 0.3803921}
+\definecolor{cb6}{rgb}{0.9843137, 0.6862745, 0.8941176}
+\definecolor{cb7}{rgb}{0.5803921, 0.5803921, 0.5803921}
+\definecolor{cb8}{rgb}{0.9254902, 0.8823529, 0.2000000}
+\definecolor{cb9}{rgb}{0.3372549, 0.7058823, 0.9137254}
+%
+\begin{document}
+\tikzstyle{mode}=[circle,ultra thin,draw=yellow!45, shading=ball,ball color=green!40!blue, minimum size=1.5mm, inner sep=0pt,]
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{tikzpicture}	[my_line_styl/.style={thin}]
+
+\begin{axis}[%
+name = {axis1},
+width=200pt,
+height=115pt,
+at={(0pt,0pt)},
+scale only axis,
+separate axis lines,
+every outer x axis line/.append style={black, thick},
+every x tick label/.append style={font=\color{black}, font=\small},
+scaled x ticks = false,
+% xlabel= {$U$},
+xticklabels={},
+xmin=0,
+xmax=6,
+xminorticks=true,
+title={mean-field; $\mu=0.5$; ERA for $\beta=100$},
+title style = {yshift = -3pt, font = \small},
+% xlabel style = {yshift = 5pt, font = \small},
+every outer y axis line/.append style={black, thick},
+every y tick label/.append style={font=\color{black}, font=\small},
+ymin=0.0,
+ymax=0.1,
+scaled y ticks = false,
+yminorticks = true,
+ytick = {0, 0.02, 0.04, 0.06, 0.08, 0.1},
+yticklabels = {$0$, $0.02$, $0.04$, $0.06$, $0.08$, $0.1$},
+% ylabel style = {yshift = 0pt,xshift=-5pt, font = \small},
+ylabel= {current},
+minor tick num = 1,
+legend columns = 1,
+legend style={at={(0.01, 0.01)}, anchor=south west, legend cell align=left, align=left, font=\scriptsize, fill = none, draw = none}
+]
+%
+\addplot[color=cb1, line width=0.8pt, mark=+, only marks, error bars/.cd, y dir=both, y explicit]%
+  table[x expr = \thisrowno{0}, y expr = \thisrowno{1}, y error index = 2]%
+  {./curr_NW128_ERA.txt}; %
+ \addlegendentry{$N_{\mathcal W} = 128$ ERA};%
+%
+ \addplot[color=cb1, line width=0.8pt, mark=x, only marks, error bars/.cd, y dir=both, y explicit]%
+ table[x expr = \thisrowno{0}, y expr = \thisrowno{1}, y error index = 2]%
+ {./curr_NW128_ERA_empty.txt}; %
+\addlegendentry{$N_{\mathcal W} = 128$ ERA};%
+%
+\addplot[color=cb0, line width=0.8pt, mark=+, error bars/.cd, y dir=both, y explicit]%
+  table[x expr = \thisrowno{0}, y expr = \thisrowno{1}, y error index = 2]%
+  {./curr_NW256_ERA.txt}; %
+ \addlegendentry{$N_{\mathcal W} = 256$ ERA};
+%
+ \addplot[color=cb0, line width=0.8pt, mark=x, error bars/.cd, y dir=both, y explicit]%
+ table[x expr = \thisrowno{0}, y expr = \thisrowno{1}, y error index = 2]%
+ {./curr_NW256_ERA_empty.txt}; %
+\addlegendentry{$N_{\mathcal W} = 256$ ERA};%
+%
+\addplot[color=cb2, line width=0.8pt, mark=o, only marks]%
+  table[x expr = \thisrowno{0}, y expr = \thisrowno{1}]%
+  {./curr_NW256.txt}; %
+ \addlegendentry{$N_{\mathcal W} = 256$ time evolution};
+%
+%  \addplot[color=cb2, line width=0.8pt, mark=asterisk, only marks]%
+%  table[x expr = \thisrowno{0}, y expr = \thisrowno{1}]%
+%  {./curr_NW256_empty.txt}; %
+% \addlegendentry{MF $N_{\mathcal W} = 256$ time evolution};
+%
+\end{axis}
+%
+\begin{axis}[%
+name = {axis2},
+width=200pt,
+height=115pt,
+at={(0pt,-130pt)},
+scale only axis,
+separate axis lines,
+every outer x axis line/.append style={black, thick},
+every x tick label/.append style={font=\color{black}, font=\small},
+scaled x ticks = false,
+xlabel= {$U$},
+xmin=0,
+xmax=6,
+xminorticks=true,
+% xlabel style = {yshift = 0pt,font = \small},
+every outer y axis line/.append style={black, thick},
+every y tick label/.append style={font=\color{black}, font=\small},
+ymin=0,
+ymax=1,
+scaled y ticks = false,
+yminorticks = true,
+% ylabel style = {yshift = -0pt,xshift=-5pt, font = \small},
+ylabel= {$\langle d^\dagger_1 d_1 \rangle$},
+minor tick num = 1,
+legend columns = 1,
+scaled y ticks = false,
+legend style={at={(0.99, 0.00)},anchor=south east, legend cell align=left,align=left,font=\small,fill = none,draw = none}
+]
+\addplot[color=cb0, line width=0.8pt, mark=+, only marks, error bars/.cd, y dir=both, y explicit]%
+  table[x expr = \thisrowno{0}, y expr = \thisrowno{1}, y error index = 2]{./occ_NW128_ERA.txt};%
+%
+% \addlegendentry{MF $N_{\mathcal W} = 256$ ERA};%
+\addplot[color=cb0, line width=0.8pt, mark=x, only marks, error bars/.cd, y dir=both, y explicit]%
+table[x expr = \thisrowno{0}, y expr = \thisrowno{1}, y error index = 2]{./occ_NW128_ERA_empty.txt};%
+%
+\addplot[color=cb1, line width=0.8pt, mark=+, error bars/.cd, y dir=both, y explicit]%
+  table[x expr = \thisrowno{0}, y expr = \thisrowno{1}, y error index = 2]{./occ_NW256_ERA.txt};%
+%
+% \addlegendentry{MF $N_{\mathcal W} = 256$ ERA};%
+\addplot[color=cb1, line width=0.8pt, mark=x, error bars/.cd, y dir=both, y explicit]%
+  table[x expr = \thisrowno{0}, y expr = \thisrowno{1}, y error index = 2]{./occ_NW256_ERA_empty.txt};%
+%
+\addplot[color=cb2, line width=0.8pt, mark=o, only marks]%
+  table[x expr = \thisrowno{0}, y expr = \thisrowno{1}]%
+  {./occ_NW256.txt}; %
+%
+%  \addplot[color=cb2, line width=0.8pt, mark=asterisk, only marks]%
+%  table[x expr = \thisrowno{0}, y expr = \thisrowno{1}]%
+%  {./occ_NW256_empty.txt}; %
+\end{axis}
+\end{tikzpicture}
+\end{document}
+
+
+
