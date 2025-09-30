@@ -3,7 +3,6 @@
 *.pdf
 *.png
 *.txt
-*.ipynb
 out/*
 
 # Byte-compiled / optimized / DLL files
