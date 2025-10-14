@@ -234,15 +234,22 @@ def local_operators(sym='U1'):
 def Hamiltonian_dpt_4U_position(NW, muL, muR, muDs, vS, U, w0=1, order='DLSR', sym='U1'):
     """ generate MPO for DPT in position basis. first dot is interacting with 4 sites """
     #
-    qI, qc, qcp, qn, dx, dn1, dn2, dI, m12, m21 = local_operators(sym='U1')
+    qI, qc, qcp, qn, dx, dn1, dn2, dI, m12, m21 = local_operators(sym=sym)
     NS = 4
     #
     vL = vR = vLR = w0
     #
-    sites = [D(1)]  # will have SLR geomery
-    sites += [L(k) for k in range(NW, 0, -1)]  # 'L1' is for L mode at the junction
-    sites += [S(k) for k in range(1, NS + 1)]  # 'S1' connected to L1
-    sites += [R(k) for k in range(1, NW + 1)]  # 'R1' is for R mode at the junction
+    if order == 'DLSR':
+        sites = [D(1)]  # will have SLR geomery
+        sites += [L(k) for k in range(NW, 0, -1)]  # 'L1' is for L mode at the junction
+        sites += [S(k) for k in range(1, NS + 1)]  # 'S1' connected to L1
+        sites += [R(k) for k in range(1, NW + 1)]  # 'R1' is for R mode at the junction
+    else:
+        sites = [L(k) for k in range(NW, 0, -1)]  # 'L1' is for L mode at the junction
+        sites += [S(1), S(2), D(1), S(3), S(4)]
+        sites += [R(k) for k in range(1, NW + 1)]  # 'R1' is for R mode at the junction
+
+
     # here sites are ordered in position
     s2i = {s: i for i, s in enumerate(sites)}
     i2s = {i: s for i, s in enumerate(sites)}
@@ -292,7 +299,7 @@ def Hamiltonian_dpt_4U_position(NW, muL, muR, muDs, vS, U, w0=1, order='DLSR', s
 def Hamiltonian_dpt_4U_momentum(NW, muL, muR, muDs, vS, U, w0=1, order='DLSR', sym='U1'):
     """ generate mpo for dpt model in mixed basis """
 
-    qI, qc, qcp, qn, dx, dn1, dn2, dI, m12, m21 = local_operators(sym='U1')
+    qI, qc, qcp, qn, dx, dn1, dn2, dI, m12, m21 = local_operators(sym=sym)
     NS = 4
     #
     vL = vR = vLR = w0
@@ -317,7 +324,7 @@ def Hamiltonian_dpt_4U_momentum(NW, muL, muR, muDs, vS, U, w0=1, order='DLSR', s
 
     terms = []
 
-    for k in range(1, NW+1):  # on-site energies
+    for k in range(1, NW1):  # on-site energies
         terms.append((muL + 2 * vL * np.cos(np.pi * k / NW1), [L(k)], [qn]))
         terms.append((muR + 2 * vR * np.cos(np.pi * k / NW1), [R(k)], [qn]))
 
@@ -350,7 +357,7 @@ def Hamiltonian_dpt_4U_momentum(NW, muL, muR, muDs, vS, U, w0=1, order='DLSR', s
 def Hamiltonian_dpt_4U_mixed(NW, muL, muR, muDs, vS, U, w0=1, order='DLSR', sym='U1'):
     """ generate mpo for dpt model in mixed basis """
 
-    qI, qc, qcp, qn, dx, dn1, dn2, dI, m12, m21 = local_operators(sym='U1')
+    qI, qc, qcp, qn, dx, dn1, dn2, dI, m12, m21 = local_operators(sym=sym)
     NS = 4
     #
     vL = vR = vLR = w0
@@ -387,10 +394,10 @@ def Hamiltonian_dpt_4U_mixed(NW, muL, muR, muDs, vS, U, w0=1, order='DLSR', sym=
     terms.append((vS, [D(1)], [dx]))
 
     for k in range(1, NW1):  # on-site energies
-        terms.append((vLR * np.sin(np.pi * k / NW1), [S(1), R(k)], [qcp, qc]))
-        terms.append((vLR * np.sin(np.pi * k / NW1), [R(k), S(1)], [qcp, qc]))
-        terms.append((vLR * np.sin(np.pi * k / NW1), [L(k), S(NS)], [qcp, qc]))
-        terms.append((vLR * np.sin(np.pi * k / NW1), [S(NS), L(k)], [qcp, qc]))
+        terms.append((vLR * np.sin(np.pi * k / NW1) * np.sqrt(2 / NW1), [S(1), R(k)], [qcp, qc]))
+        terms.append((vLR * np.sin(np.pi * k / NW1) * np.sqrt(2 / NW1), [R(k), S(1)], [qcp, qc]))
+        terms.append((vLR * np.sin(np.pi * k / NW1) * np.sqrt(2 / NW1), [L(k), S(NS)], [qcp, qc]))
+        terms.append((vLR * np.sin(np.pi * k / NW1) * np.sqrt(2 / NW1), [S(NS), L(k)], [qcp, qc]))
 
     for k in range(1, NS):
         terms.append((vLR, [S(k), S(k+1)], [qcp, qc]))
