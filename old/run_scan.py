@@ -1,6 +1,6 @@
 import ray
 import time
-from routines import generate_Hamiltonian, generate_gs, generate_quench
+from old import generate_Hamiltonian, generate_gs, generate_quench
 
 
 
