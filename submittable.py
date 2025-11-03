@@ -210,11 +210,11 @@ def singlerun():
     muL = float(para['biasLR'])
     muR = -float(para['biasLR'])
     alpha = float(para['n1init'])
-    mixed = para['mixed']
+    mixed = bool(para['mixed'])
     merge = True
     mapping = 'mixed' if mixed else 'position'
     sym = 'U1'
-    order = 'LRSDSLR'
+    order = 'LSDSR'
     D = int(para['TEdim'])
     vs = float(para['vs'])
     dt = float(para['timestep'])
