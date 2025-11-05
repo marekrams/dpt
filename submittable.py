@@ -7,6 +7,7 @@ from hamiltonians import local_operators, Hamiltonian_dpt_position, Hamiltonian_
 from auxilliary import merge_sites, op1site
 from hamiltonians import L, S, D, R
 from os import getcwd, mkdir
+import os
 
 
 def Hamiltonian( key):
@@ -150,7 +151,7 @@ def initial_state(NW, NS, U, muL, muR, vS0, alpha, mapping, order, merge, sym, D
     return psi, info.energy
 
 
-def run_evolution(psi, NW, NS, U, muL, muR, vS0, vS1, mapping, order, merge, sym, D_total, tswitch, tfin, dt, muDs=[0, 0], verbose=0):
+def run_evolution(psi, NW, NS, U, muL, muR, vS0, vS1, mapping, order, merge, sym, D_total, tswitch, tfin, dt, muDs=[0, 0], verbose=0, tdvptol = 1e-6):
 
     sites = order_sites(mapping, order, NW, NS=4)
 
@@ -172,7 +173,7 @@ def run_evolution(psi, NW, NS, U, muL, muR, vS0, vS1, mapping, order, merge, sym
         if 'S' in site:
             traces[site] = []
 
-    opts_svd = {"D_total": D_total, 'tol': 1e-6}
+    opts_svd = {"D_total": D_total, 'tol': tdvptol}
     print("Running time evolution ... ")
     for t0, t1, H in [(0, tswitch, H1), (tswitch, tfin, H2)]:
         times = np.linspace(t0, t1, int((t1 - t0) /dt) + 1)
@@ -222,25 +223,27 @@ def singlerun():
     tfin = float(para['tfin'])
     repeat = int(para['repeat'])
 
-
+    tdvptol = 1e-6
     for i in range(repeat):
 
         print(f"repeat: {i}")
 
-        path = f'{getcwd()}/results_repeat{i}/'
+        curpath = f'{getcwd()}/results_repeat{i}/'
 
-        try:
-            mkdir(path)
-        except:
-            pass
+        if not os.path.isdir(curpath):
+            mkdir(curpath)
+        else:
+            if os.path.isfile( f'{curpath}times'):
+                print( f"iter {i} exists, skip!")
+                continue
 
         psi0 , _ = initial_state(L, NS, U, muL, muR, 0, alpha, mapping, order, merge, sym, D)
-        psi, times, traces = run_evolution(psi0, L, NS, U, muL, muR, 0, vs, mapping, order, merge, sym, D, tswitch, tfin, dt, verbose=0)
+        psi, times, traces = run_evolution(psi0, L, NS, U, muL, muR, 0, vs, mapping, order, merge, sym, D, tswitch, tfin, dt, tdvptol= tdvptol, verbose=1)
 
         n1 = traces['n1']
 
-        np.savetxt( f'{path}times', times)
-        np.savetxt( f'{path}n1', n1)
+        np.savetxt( f'{curpath}times', times)
+        np.savetxt( f'{curpath}n1', n1)
 
         new = np.mean( n1[-16:])
 
