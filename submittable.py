@@ -8,6 +8,9 @@ from auxilliary import merge_sites, op1site
 from hamiltonians import L, S, D, R
 from os import getcwd, mkdir
 import os
+# from threadpoolctl import ThreadpoolController
+# from pprint import pprint
+import time
 
 
 def Hamiltonian( key):
@@ -181,6 +184,8 @@ def run_evolution(psi, NW, NS, U, muL, muR, vS0, vS1, mapping, order, merge, sym
 
         #print(times)
         for step in mps.tdvp_(psi, H, times, method='2site', dt=dt, opts_svd=opts_svd, yield_initial=True, subtract_E=True):
+
+            start_time = time.time()
             if verbose:
                 print(step)
             ts.append(step.tf)
@@ -193,6 +198,10 @@ def run_evolution(psi, NW, NS, U, muL, muR, vS0, vS1, mapping, order, merge, sym
 
             ent = psi.get_entropy()
             traces['max_ent'].append(max(ent))
+
+            end_time = time.time()
+            print(f"TDVP end: {step.tf}, elapsed time: {end_time - start_time}")
+
     print("Done.")
     return psi, ts, traces
 
@@ -238,7 +247,7 @@ def singlerun():
                 continue
 
         psi0 , _ = initial_state(L, NS, U, muL, muR, 0, alpha, mapping, order, merge, sym, D)
-        psi, times, traces = run_evolution(psi0, L, NS, U, muL, muR, 0, vs, mapping, order, merge, sym, D, tswitch, tfin, dt, tdvptol= tdvptol, verbose=1)
+        psi, times, traces = run_evolution(psi0, L, NS, U, muL, muR, 0, vs, mapping, order, merge, sym, D, tswitch, tfin, dt, tdvptol= tdvptol, verbose=0)
 
         n1 = traces['n1']
 

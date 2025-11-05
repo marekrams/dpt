@@ -1,9 +1,9 @@
 {
     "U": 3.2,
-    "L": 64,
-    "R": 64,
-    "tswitch": 16.0,
-    "tfin": 48.0,
+    "L": 8,
+    "R": 8,
+    "tswitch": 2.0,
+    "tfin": 6.0,
     "timestep": 0.125,
     "TEdim": 128,
     "mixed": true,
