@@ -11,6 +11,7 @@ import os
 # from threadpoolctl import ThreadpoolController
 # from pprint import pprint
 import time
+from yastn.operators import SpinlessFermions
 
 
 def Hamiltonian( key):
@@ -154,9 +155,13 @@ def initial_state(NW, NS, U, muL, muR, vS0, alpha, mapping, order, merge, sym, D
     return psi, info.energy
 
 
-def run_evolution(psi, NW, NS, U, muL, muR, vS0, vS1, mapping, order, merge, sym, D_total, tswitch, tfin, dt, muDs=[0, 0], verbose=0, tdvptol = 1e-6):
+def run_evolution(psi, NW, NS, U, muL, muR, vS0, vS1, mapping, order, merge, sym, D_total, tswitch, tfin, dt, lasttime = 0, muDs=[0, 0], curpath = '', verbose=0, tdvptol = 1e-6):
 
     sites = order_sites(mapping, order, NW, NS=4)
+
+    # statistics
+    total = 0
+    cnt = 0
 
     H1, s2i, i2s = Hamiltonian(mapping)(NW, NS, muL, muR, muDs, vS0, U, sym=sym, order=sites)
     H2, s2i, i2s = Hamiltonian(mapping)(NW, NS, muL, muR, muDs, vS1, U, sym=sym, order=sites)
@@ -182,14 +187,26 @@ def run_evolution(psi, NW, NS, U, muL, muR, vS0, vS1, mapping, order, merge, sym
         times = np.linspace(t0, t1, int((t1 - t0) /dt) + 1)
         times = [t0, t0+dt/128, t0+dt/64, t0+dt/32, t0+dt/16, t0+dt/8, t0+dt/4, t0+dt/2] + list(times)[1:]
 
-        #print(times)
-        for step in mps.tdvp_(psi, H, times, method='2site', dt=dt, opts_svd=opts_svd, yield_initial=True, subtract_E=True):
+        times = np.array(times)
+        times = times[ times >= lasttime]
 
-            start_time = time.time()
+        if len(times) == 0:
+            print("Skipping stage 1")
+            continue
+
+        start_time = time.time()
+        #print(times)
+        for step in mps.tdvp_(psi, H, times, method='2site', dt=dt, opts_svd=opts_svd, 
+                              yield_initial=True if times[0] == 0 else False, 
+                              subtract_E=True):
+        
+            cnt += 1
             if verbose:
                 print(step)
             ts.append(step.tf)
-            traces['n1'].append(mps.vdot(psi, On1, psi).real)
+
+            n1 = mps.vdot(psi, On1, psi).real
+            traces['n1'].append(n1)
             traces['n2'].append(mps.vdot(psi, On2, psi).real)
             traces['m12'].append(mps.vdot(psi, Om12, psi).real)
             for site in sites:
@@ -201,6 +218,22 @@ def run_evolution(psi, NW, NS, U, muL, muR, vS0, vS1, mapping, order, merge, sym
 
             end_time = time.time()
             print(f"TDVP end: {step.tf}, elapsed time: {end_time - start_time}")
+            
+            total += end_time - start_time
+            print(f"Rolling average TDVP: {total/cnt}")
+
+            psidata = psi.save_to_dict()
+            #print(psidata)
+            with open(f'{curpath}TDVPlast.npy', 'wb') as f:
+                np.save(f, psidata, allow_pickle=True)
+
+            with open(f'{curpath}times', 'a') as f:
+                np.savetxt( f, [step.tf])
+
+            with open(f'{curpath}n1', 'a') as f:
+                np.savetxt( f, [n1])
+
+            start_time = time.time()
 
     print("Done.")
     return psi, ts, traces
@@ -241,19 +274,38 @@ def singlerun():
 
         if not os.path.isdir(curpath):
             mkdir(curpath)
-        else:
-            if os.path.isfile( f'{curpath}times'):
+
+        if os.path.isfile( f'{curpath}times'):
+
+            lasttime = np.loadtxt( f'{curpath}times')[-1]
+
+            # finish!
+            if lasttime == tfin:
                 print( f"iter {i} exists, skip!")
                 continue
+            
+            # we continue
+            else:
+                print("Loading last")
+                psi0data  = np.load( f'{curpath}TDVPlast.npy', allow_pickle=True).item()
+                ops = SpinlessFermions(sym=sym)
+                psi0 = mps.load_from_dict(ops.config, psi0data)
+            
+        # no time file, starting new!
+        else:
+            print("Starting new")
+            psi0 , _ = initial_state(L, NS, U, muL, muR, 0, alpha, mapping, order, merge, sym, D)
 
-        psi0 , _ = initial_state(L, NS, U, muL, muR, 0, alpha, mapping, order, merge, sym, D)
-        psi, times, traces = run_evolution(psi0, L, NS, U, muL, muR, 0, vs, mapping, order, merge, sym, D, tswitch, tfin, dt, tdvptol= tdvptol, verbose=0)
+            print(psi0)
 
-        n1 = traces['n1']
+            lasttime = 0.0
 
-        np.savetxt( f'{curpath}times', times)
-        np.savetxt( f'{curpath}n1', n1)
+            
 
+        #print(psi0.save_to_dict())
+        psi, times, traces = run_evolution(psi0, L, NS, U, muL, muR, 0, vs, mapping, order, merge, sym, D, tswitch, tfin, dt, lasttime = lasttime, curpath = curpath, tdvptol= tdvptol, verbose=0)
+
+        n1 = np.loadtxt(f'{curpath}/n1')
         new = np.mean( n1[-16:])
 
         print("new n1 last: ", new)
