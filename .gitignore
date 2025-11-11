@@ -3,7 +3,7 @@
 *.pdf
 *.png
 *.txt
-#*.json
+*.json
 out/*
 test/*
 results*/*

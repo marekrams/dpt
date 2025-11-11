@@ -282,6 +282,8 @@ def singlerun():
             # finish!
             if lasttime == tfin:
                 print( f"iter {i} exists, skip!")
+                alpha = np.mean(np.loadtxt( f'{curpath}n1')[-16:])
+                print( f"current alpha = {alpha}")
                 continue
             
             # we continue
@@ -316,4 +318,102 @@ def singlerun():
         alpha = new
 
 
-singlerun()
+def singlerun_binary_search():
+
+
+
+    with open( getcwd() + '/dptpara.json', 'r') as io:
+        para = json.load(io)
+
+    L = int(para['L'])
+    NS = 4
+    U = float(para['U'])
+    muL = float(para['biasLR'])
+    muR = -float(para['biasLR'])
+    lo = float(para['lo'])
+    hi = float(para['hi'])
+    mixed = bool(para['mixed'])
+    merge = True
+    mapping = 'mixed' if mixed else 'position'
+    sym = 'U1'
+    order = 'LSDSR'
+    D = int(para['TEdim'])
+    vs = float(para['vs'])
+    dt = float(para['timestep'])
+    tswitch = float(para['tswitch'])
+    tfin = float(para['tfin'])
+    repeat = int(para['repeat'])
+
+    tdvptol = 1e-6
+
+
+    for i in range(repeat):
+
+        print(f"repeat: {i}")
+
+        curpath = f'{getcwd()}/results_repeat{i}/'
+
+        if not os.path.isdir(curpath):
+            mkdir(curpath)
+
+        if os.path.isfile( f'{curpath}times'):
+
+            lasttime = np.loadtxt( f'{curpath}times')[-1]
+
+            # finish!
+            if lasttime == tfin:
+                print( f"iter {i} exists, skip!")
+                lo, hi = np.loadtxt( f'{curpath}lohi')
+                print( f"current lo = {lo}, hi = {hi}")
+                continue
+            
+            # we continue
+            else:
+                print("Loading last")
+
+                if i > 0:
+                    lastpath = f'{getcwd()}/results_repeat{i - 1}/'
+                    lo, hi = np.loadtxt( f'{lastpath}lohi')
+
+                alpha = (lo + hi) / 2
+                psi0data  = np.load( f'{curpath}TDVPlast.npy', allow_pickle=True).item()
+                ops = SpinlessFermions(sym=sym)
+                psi0 = mps.load_from_dict(ops.config, psi0data)
+            
+        # no time file, starting new!
+        else:
+            print("Starting new")
+            alpha = (lo + hi) / 2
+            psi0 , _ = initial_state(L, NS, U, muL, muR, 0, alpha, mapping, order, merge, sym, D)
+
+            print(psi0)
+
+            lasttime = 0.0
+
+            
+
+        #print(psi0.save_to_dict())
+        psi, times, traces = run_evolution(psi0, L, NS, U, muL, muR, 0, vs, mapping, order, merge, sym, D, tswitch, tfin, dt, lasttime = lasttime, curpath = curpath, tdvptol= tdvptol, verbose=0)
+
+        n1 = np.loadtxt(f'{curpath}/n1')
+        new = np.mean( n1[-16:])
+
+        if np.abs(new - alpha) < 1e-4:
+            break
+
+        # if we have up trending:
+        if new > alpha:
+            lo = alpha
+        
+        else:
+            hi = alpha
+
+        
+        np.savetxt( f'{curpath}/lohi', [lo, hi])
+        print(f"after simulation, lo = {lo}, hi = {hi}")
+
+
+
+
+#singlerun()
+singlerun_binary_search()
