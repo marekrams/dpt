@@ -240,12 +240,8 @@ def run_evolution(psi, NW, NS, U, muL, muR, vS0, vS1, mapping, order, merge, sym
 
 
 
-def singlerun():
+def singlerun(para):
 
-
-
-    with open( getcwd() + '/dptpara.json', 'r') as io:
-        para = json.load(io)
 
     L = int(para['L'])
     NS = 4
@@ -308,22 +304,18 @@ def singlerun():
         psi, times, traces = run_evolution(psi0, L, NS, U, muL, muR, 0, vs, mapping, order, merge, sym, D, tswitch, tfin, dt, lasttime = lasttime, curpath = curpath, tdvptol= tdvptol, verbose=0)
 
         n1 = np.loadtxt(f'{curpath}/n1')
-        new = np.mean( n1[-16:])
+        new = np.mean( n1[-8:])
 
         print("new n1 last: ", new)
 
-        if np.abs(new - alpha) < 1e-4:
+        if np.abs(new - alpha) < 1e-5:
             break
 
         alpha = new
 
 
-def singlerun_binary_search():
+def singlerun_binary_search(para):
 
-
-
-    with open( getcwd() + '/dptpara.json', 'r') as io:
-        para = json.load(io)
 
     L = int(para['L'])
     NS = 4
@@ -396,17 +388,17 @@ def singlerun_binary_search():
         psi, times, traces = run_evolution(psi0, L, NS, U, muL, muR, 0, vs, mapping, order, merge, sym, D, tswitch, tfin, dt, lasttime = lasttime, curpath = curpath, tdvptol= tdvptol, verbose=0)
 
         n1 = np.loadtxt(f'{curpath}/n1')
-        new = np.mean( n1[-16:])
+        new = np.mean( n1[-8:])
 
-        if np.abs(new - alpha) < 1e-4:
+        if np.abs(new - alpha) < 1e-5:
             break
 
         # if we have up trending:
         if new > alpha:
-            lo = alpha
+            lo = new
         
         else:
-            hi = alpha
+            hi = new
 
         
         np.savetxt( f'{curpath}/lohi', [lo, hi])
@@ -416,4 +408,21 @@ def singlerun_binary_search():
 
 
 #singlerun()
-singlerun_binary_search()
+if __name__ == '__main__':
+
+    with open( getcwd() + '/dptpara.json', 'r') as io:
+        para = json.load(io)
+
+    mode = para['searchmode']
+
+    if mode == 'iterative':
+
+        print("ITERATIVE")
+        singlerun(para)
+
+    elif mode == 'binarysearch':
+        print("BINARY SEARCH")
+        singlerun_binary_search(para)
+
+    else:
+        raise ValueError("not recognized searchmode")
