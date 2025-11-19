@@ -160,7 +160,7 @@ def Hamiltonian_dpt_momentum(NW, NS, muL, muR, muDs, vS, U, w0=1, order='DLR', s
 
 
 
-def Hamiltonian_dpt_mixed(NW, NS, muL, muR, muDs, vS, U, w0=1, sites = [], sym='U1'):
+def Hamiltonian_dpt_mixed(NW, NS, muL, muR, muDs, vS, U, w0=1, order = [], sym='U1'):
     """ generate mpo for dpt model in mixed basis """
 
     qI, qc, qcp, qn, dx, dn1, dn2, dI, m12, m21 = local_operators(sym=sym)
@@ -191,6 +191,7 @@ def Hamiltonian_dpt_mixed(NW, NS, muL, muR, muDs, vS, U, w0=1, sites = [], sym='
     #     sites = [D(1)] + sites[:NW1] + [S(k) for k in range(1, NS + 1)] + sites[NW1:]
     # else:
     #     sites = order
+    sites = order
 
     # here sites are ordered in position
     s2i = {s: i for i, s in enumerate(sites)}

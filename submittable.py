@@ -256,7 +256,7 @@ def singlerun(para):
     merge = True
     mapping = 'mixed' if mixed else 'position'
     sym = 'U1'
-    order = 'LSDSR'
+    order = para['order']
     D = int(para['TEdim'])
     vs = float(para['vs'])
     dt = float(para['timestep'])
