@@ -233,6 +233,9 @@ def run_evolution(psi, NW, NS, U, muL, muR, vS0, vS1, mapping, order, merge, sym
             with open(f'{curpath}n1', 'a') as f:
                 np.savetxt( f, [n1])
 
+            with open(f'{curpath}SvN', 'a') as f:
+                np.savetxt( f, ent)
+
             start_time = time.time()
 
     print("Done.")

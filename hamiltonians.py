@@ -160,7 +160,7 @@ def Hamiltonian_dpt_momentum(NW, NS, muL, muR, muDs, vS, U, w0=1, order='DLR', s
 
 
 
-def Hamiltonian_dpt_mixed(NW, NS, muL, muR, muDs, vS, U, w0=1, order='LRDSLR', sym='U1'):
+def Hamiltonian_dpt_mixed(NW, NS, muL, muR, muDs, vS, U, w0=1, sites = [], sym='U1'):
     """ generate mpo for dpt model in mixed basis """
 
     qI, qc, qcp, qn, dx, dn1, dn2, dI, m12, m21 = local_operators(sym=sym)
@@ -174,21 +174,23 @@ def Hamiltonian_dpt_mixed(NW, NS, muL, muR, muDs, vS, U, w0=1, order='LRDSLR', s
     # sites += [S(k) for k in range(1, NS + 1)]  # 'S1' connected to L1
     # sites += [R(k) for k in range(1, NW1)]  # 'R1' is for R mode at the junction
 
-    if order == 'LRDSLR':
-        sites = []
-        for k in range(1, NW1):
-            sites.append(L(k))
-            sites.append(R(k))
-        ss = [S(k) for k in range(1, NS + 1)]
-        sites = sites[:NW1] + ss[:NS//2] + ['D1'] + ss[NS//2:] + sites[NW1:]
-    elif order == 'DLRSLR':
-        sites = []
-        for k in range(1, NW1):
-            sites.append(L(k))
-            sites.append(R(k))
-        sites = [D(1)] + sites[:NW1] + [S(k) for k in range(1, NS + 1)] + sites[NW1:]
-    else:
-        sites = order
+    # legacy code that was not used, as sites are now given by order_sites() function
+
+    # if order == 'LRDSLR':
+    #     sites = []
+    #     for k in range(1, NW1):
+    #         sites.append(L(k))
+    #         sites.append(R(k))
+    #     ss = [S(k) for k in range(1, NS + 1)]
+    #     sites = sites[:NW1] + ss[:NS//2] + ['D1'] + ss[NS//2:] + sites[NW1:]
+    # elif order == 'DLRSLR':
+    #     sites = []
+    #     for k in range(1, NW1):
+    #         sites.append(L(k))
+    #         sites.append(R(k))
+    #     sites = [D(1)] + sites[:NW1] + [S(k) for k in range(1, NS + 1)] + sites[NW1:]
+    # else:
+    #     sites = order
 
     # here sites are ordered in position
     s2i = {s: i for i, s in enumerate(sites)}
@@ -215,10 +217,10 @@ def Hamiltonian_dpt_mixed(NW, NS, muL, muR, muDs, vS, U, w0=1, order='LRDSLR', s
     terms.append((vS, [D(1)], [dx]))
 
     for k in range(1, NW1):  # on-site energies
-        terms.append((vLR * np.sin(np.pi * k / NW1) * np.sqrt(2 / NW1), [S(1), R(k)], [qcp, qc]))
-        terms.append((vLR * np.sin(np.pi * k / NW1) * np.sqrt(2 / NW1), [R(k), S(1)], [qcp, qc]))
-        terms.append((vLR * np.sin(np.pi * k / NW1) * np.sqrt(2 / NW1), [L(k), S(NS)], [qcp, qc]))
-        terms.append((vLR * np.sin(np.pi * k / NW1) * np.sqrt(2 / NW1), [S(NS), L(k)], [qcp, qc]))
+        terms.append((vLR * np.sin(np.pi * k / NW1) * np.sqrt(2 / NW1), [S(1), L(k)], [qcp, qc]))
+        terms.append((vLR * np.sin(np.pi * k / NW1) * np.sqrt(2 / NW1), [L(k), S(1)], [qcp, qc]))
+        terms.append((vLR * np.sin(np.pi * k / NW1) * np.sqrt(2 / NW1), [R(k), S(NS)], [qcp, qc]))
+        terms.append((vLR * np.sin(np.pi * k / NW1) * np.sqrt(2 / NW1), [S(NS), R(k)], [qcp, qc]))
 
     for k in range(1, NS):
         terms.append((vLR, [S(k), S(k+1)], [qcp, qc]))
