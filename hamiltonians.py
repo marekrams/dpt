@@ -1,23 +1,9 @@
 import numpy as np
 import yastn
 import yastn.tn.mps as mps
+from sites import S, D, L, R
+from pprint import pprint
 
-
-def L(k):
-    """ label for L modes """
-    return f'L{k}'
-
-def R(k):
-    """ label for R modes """
-    return f'R{k}'
-
-def S(k):
-    """ label for S modes """
-    return f'S{k}'
-
-def D(k):
-    """ label for D modes """
-    return f'D{k}'
 
 
 def local_operators(sym='U1'):
@@ -217,7 +203,7 @@ def Hamiltonian_dpt_mixed(NW, NS, muL, muR, muDs, vS, U, w0=1, order = [], sym='
     terms.append((muDs[1], [D(1)], [dn2]))
     terms.append((vS, [D(1)], [dx]))
 
-    for k in range(1, NW1):  # on-site energies
+    for k in range(1, NW1):  #  hopping to sys
         terms.append((vLR * np.sin(np.pi * k / NW1) * np.sqrt(2 / NW1), [S(1), L(k)], [qcp, qc]))
         terms.append((vLR * np.sin(np.pi * k / NW1) * np.sqrt(2 / NW1), [L(k), S(1)], [qcp, qc]))
         terms.append((vLR * np.sin(np.pi * k / NW1) * np.sqrt(2 / NW1), [R(k), S(NS)], [qcp, qc]))
@@ -232,5 +218,6 @@ def Hamiltonian_dpt_mixed(NW, NS, muL, muR, muDs, vS, U, w0=1, order = [], sym='
         terms.append((U, (D(1), S(k)), [dn1 - dI / 2, qn - qI / 2]))
 
     Hterms = [mps.Hterm(v, tuple(s2i[x] for x in p), o) for v, p, o in terms]
+
     H = mps.generate_mpo(II, Hterms)
     return H, s2i, i2s

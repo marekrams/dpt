@@ -5,13 +5,13 @@ import yastn.tn.mps as mps
 import json
 from hamiltonians import local_operators, Hamiltonian_dpt_position, Hamiltonian_dpt_momentum, Hamiltonian_dpt_mixed
 from auxilliary import merge_sites, op1site
-from hamiltonians import L, S, D, R
+from sites import L, S, D, R, order_sites
 from os import getcwd, mkdir
 import os
-# from threadpoolctl import ThreadpoolController
-# from pprint import pprint
+
 import time
 from yastn.operators import SpinlessFermions
+from pprint import pprint
 
 
 def Hamiltonian( key):
@@ -56,64 +56,13 @@ def init_occupations(mapping, NW, NS):
     return occ
 
 
-def SDS_sites(NS):
-    sites =  [S(k) for k in range(1, NS // 2 + 1)]
-    sites += [D(1)]
-    sites += [S(k) for k in range(NS // 2 + 1, NS + 1)]
-    return sites
-
-def S_sites(NS):
-    return [S(k) for k in range(1, NS + 1)]
-
-def order_sites(mapping, order, NW, NS=4):
-    """ predefined ordering of sites """
-    if mapping == 'position':
-        if order == 'DLSR':
-            sites =  [D(1)]
-            sites += [L(k) for k in range(NW, 0, -1)]  # 'L1' is for L mode at the junction
-            sites += S_sites(NS)  # 'S1' connected to L1
-            sites += [R(k) for k in range(1, NW + 1)]  # 'R1' is for R mode at the junction
-        elif order == 'LSDSR':
-            sites =  [L(k) for k in range(NW, 0, -1)]  # 'L1' is for L mode at the junction
-            sites += SDS_sites(NS)
-            sites += [R(k) for k in range(1, NW + 1)]  # 'R1' is for R mode at the junction
-        else:
-            raise ValueError("For mapping='position' select order from 'DLSR', LSDSR'.")
-        return sites
-
-    if mapping == 'mixed':
-        if order in ['DLSR', 'LSDSR']:
-            return order_sites('position', order, NW, NS)
-        if order in ['LRSDSLR', 'DLRSLR']:
-            sites = []
-            for k in range(1, NW + 1):
-                sites.append(L(k))
-                sites.append(R(k))
-            if order == 'LRSDSLR':
-                return sites[:NW] + SDS_sites(NS) + sites[NW:]
-            if order == 'DLRSLR':
-                return [D(1)] + sites[:NW] + S_sites(NS) + sites[NW:]
-        else:
-            raise ValueError("For 'mixed' select order from 'DLSR', LSDSR', 'LRSDSLR', 'DLRSLR'.")
-
-    if mapping == 'momentum':
-        if order == 'LDR':
-            return order_sites('position', "LSDSR", NW + NS // 2, NS=0)
-        if order == 'DLR':
-            return order_sites('position', "DLSR", NW + NS // 2, NS=0)
-        if order == 'LRDLR':
-            return order_sites('mixed', "LRSDSLR", NW + NS // 2, NS=0)
-        if order == 'DLRLR':
-            return order_sites('mixed', "DLRSLR", NW + NS // 2, NS=0)
-        raise ValueError("For 'momentum' select order from 'DLR', LDR', 'LRDLR', 'DLRLR'.")
-
-    raise ValueError("mapping should be 'mixed', 'momentum', or 'position'.")
-
-
-def initial_state(NW, NS, U, muL, muR, vS0, alpha, mapping, order, merge, sym, D_total, muDs=[0, 10000]):
+def initial_state(NW, NS, U, muL, muR, vS0, alpha, mapping, order, merge, sym, D_total, curpath = '', muDs=[0, 10000]):
 
     sites = order_sites(mapping, order, NW, NS)
     init_occ = init_occupations(mapping, NW, NS)
+    pprint(sites)
+    with open(f'{curpath}sites', 'w') as f:
+        np.savetxt(f, sites, fmt = '%s')
 
     if sym == 'U1':
         n_profile = [NW + NS // 2 - x for x in accumulate([init_occ[site] for site in sites], initial=0)]
@@ -158,7 +107,7 @@ def initial_state(NW, NS, U, muL, muR, vS0, alpha, mapping, order, merge, sym, D
 def run_evolution(psi, NW, NS, U, muL, muR, vS0, vS1, mapping, order, merge, sym, D_total, tswitch, tfin, dt, lasttime = 0, muDs=[0, 0], curpath = '', verbose=0, tdvptol = 1e-6):
 
     sites = order_sites(mapping, order, NW, NS=4)
-
+    pprint(sites)
     # statistics
     total = 0
     cnt = 0
@@ -206,9 +155,10 @@ def run_evolution(psi, NW, NS, U, muL, muR, vS0, vS1, mapping, order, merge, sym
             ts.append(step.tf)
 
             n1 = mps.vdot(psi, On1, psi).real
+            m12 = mps.vdot(psi, Om12, psi).real
             traces['n1'].append(n1)
             traces['n2'].append(mps.vdot(psi, On2, psi).real)
-            traces['m12'].append(mps.vdot(psi, Om12, psi).real)
+            traces['m12'].append(m12)
             for site in sites:
                 if 'S' in site:
                     traces[site].append(mps.vdot(psi, Ons[site], psi).real)
@@ -233,8 +183,11 @@ def run_evolution(psi, NW, NS, U, muL, muR, vS0, vS1, mapping, order, merge, sym
             with open(f'{curpath}n1', 'a') as f:
                 np.savetxt( f, [n1])
 
+            with open(f'{curpath}m12', 'a') as f:
+                np.savetxt( f, [m12])
+
             with open(f'{curpath}SvN', 'a') as f:
-                np.savetxt( f, ent)
+                np.savetxt( f, [ent])
 
             start_time = time.time()
 
@@ -295,7 +248,7 @@ def singlerun(para):
         # no time file, starting new!
         else:
             print("Starting new")
-            psi0 , _ = initial_state(L, NS, U, muL, muR, 0, alpha, mapping, order, merge, sym, D)
+            psi0 , _ = initial_state(L, NS, U, muL, muR, 0, alpha, mapping, order, merge, sym, D, curpath=curpath)
 
             print(psi0)
 
@@ -331,7 +284,7 @@ def singlerun_binary_search(para):
     merge = True
     mapping = 'mixed' if mixed else 'position'
     sym = 'U1'
-    order = 'LSDSR'
+    order = para['order']
     D = int(para['TEdim'])
     vs = float(para['vs'])
     dt = float(para['timestep'])
@@ -379,7 +332,7 @@ def singlerun_binary_search(para):
         else:
             print("Starting new")
             alpha = (lo + hi) / 2
-            psi0 , _ = initial_state(L, NS, U, muL, muR, 0, alpha, mapping, order, merge, sym, D)
+            psi0 , _ = initial_state(L, NS, U, muL, muR, 0, alpha, mapping, order, merge, sym, D, curpath=curpath)
 
             print(psi0)
 
