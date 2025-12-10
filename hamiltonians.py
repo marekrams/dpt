@@ -6,7 +6,7 @@ from pprint import pprint
 
 
 
-def local_operators(sym='U1'):
+def  local_operators(sym='U1'):
     ops = yastn.operators.SpinlessFermions(sym=sym)
     qI, qc, qcp, qn = ops.I(), ops.c(), ops.cp(), ops.n()
     dx = yastn.Tensor(config=qI.config, s=qI.s)
