@@ -63,36 +63,58 @@ def gen_time(new, timecontrol):
 
 def gen_dpt_cluster(categories : dict, toplevel = ''):
 
+    # dptpara = {
+    #     "U": 3.0,
+    #     "L": 64,
+    #     "R": 64,
+    #     "tswitch": 0,
+    #     "tfin" : 64.0,
+    #     "timestep": 0.25,
+    #     "TEdim": 64,
+    #     "mixed": True,
+    #     "ordering": "SORTED",
+    #     "QPCmixed": False,
+    #     "sweepcnt" : 20,
+    #     "ddposition": "R",
+    #     "vs" : 0.25,
+    #     "avg" : False,
+    #     "switchinterval" : 1,
+    #     "initdd" : "UPPER",
+    #     "QN" : True,
+    #     "biasLR" : 0.0,
+    #     "mode" : "disconnectDD",
+    #     "fitmode" : "linear",
+    #     "n1init" : 1.0,
+    #     "repeat" : 10,
+    #     "stagetype" : "uniform",
+    #     "ifshuffle" : False,
+    #     "Trotterfirst" : False,
+    #     "method" : "TDVP",
+    #     'lo' : 0.5,
+    #     'hi' : 1.0,
+    #     'searchmode' : 'iterative'
+    # }
+
     dptpara = {
-        "U": 3.0,
-        "L": 64,
-        "R": 64,
-        "tswitch": 0,
-        "tfin" : 64.0,
-        "timestep": 0.25,
-        "TEdim": 64,
+        "U": 3.2,
+        "L": 8,
+        "R": 8,
+        "tswitch": 16.0,
+        "tfin": 48.0,
+        "timestep": 0.125,
+        "TEdim": 128,
         "mixed": True,
-        "ordering": "SORTED",
-        "QPCmixed": False,
-        "sweepcnt" : 20,
-        "ddposition": "R",
-        "vs" : 0.25,
-        "avg" : False,
-        "switchinterval" : 1,
-        "initdd" : "UPPER",
-        "QN" : True,
-        "biasLR" : 0.0,
-        "mode" : "disconnectDD",
-        "fitmode" : "linear",
-        "n1init" : 1.0,
-        "repeat" : 10,
-        "stagetype" : "uniform",
-        "ifshuffle" : False,
-        "Trotterfirst" : False,
-        "method" : "TDVP",
-        'lo' : 0.5,
-        'hi' : 1.0,
-        'searchmode' : 'iterative'
+        "vs": 0.25,
+        "biasLR": 0.0,
+        "n1init": 0.75,
+        "repeat": 1,
+        "order": "LRSDSLR",
+        "lo" : 0.5,
+        "hi" : 1.0,
+        "searchmode" : "iterative",
+        "max1" : 1024,
+        "max2" : 128,
+        "merge" : True
     }
     keys = list(categories.keys())
     prods = product(*categories.values())
@@ -111,7 +133,7 @@ def gen_dpt_cluster(categories : dict, toplevel = ''):
         string_dict = deepcopy(target)
         string =  toplevel + '_'.join([ key + str(val) for key, val in string_dict.items()])
 
-        print(target)
+        #print(target)
 
         for key, val in target.items():
 
@@ -126,13 +148,6 @@ def gen_dpt_cluster(categories : dict, toplevel = ''):
                 raise(ValueError("category key '{}' does not match paras!".format(key)))
 
 
-
-        #target_path = '/home1/10407/kyvine/MPS/src'
-        target_path = '/wrk/knl20/TN/src/'
-        #target_path = '/wrk/knl20/ITensor/newsrc/'
-        #target_path = '/home/knl20/Desktop/github/Disordered-Hubbard-ITensor/src/'
-        #target_path = '/wrk/knl20/ITensor/ref/'
-        #target_path = '/Users/knl20/Desktop/Code/TN/src/'
 
         if not os.path.exists(string):
             os.mkdir(string)
@@ -283,20 +298,40 @@ def get_n1init(L, U, key, dim = None, mixed = None) :
         d = { Us[i] : [max(0.51, init - 0.06), min(0.98, init + 0.06)] for i, init in enumerate(inits)}
 
         return d[U]
+    
+    elif key == 'Nov20':
+
+        # this is the first L = 64, 128 example
+        # so the init is pushed up
+
+        fittingdada = np.loadtxt(f'../fittingdata/Nov20L{L}dim128mixed{mixed}')
+
+        fittingdada = np.round(fittingdada, decimals=10)
+        Us = fittingdada[:, 0]
+        val = fittingdada[:, 1]
+        offset = 0.1
+        d = { U : [max(0.47, val[i] - offset), min(1.0, val[i] + offset)] for i, U in enumerate(Us)}
+
+        return d[U]
+    
+
+
+
 
     else:
         raise ValueError("Unrecognized type")
 
 def DPT_yastn():
 
-    Ls = [32]
+    Ls = [64, 128]
     dims = [128]
-    #Us = [2.9, 2.95, 2.975, 3.0, 3.025, 3.05, 3.1, 3.15, 3.2 ,3.3]
-    Us = [3.025, 3.05, 3.075]
+    Us = [2.95, 2.975, 3.0, 3.025, 3.05, 3.075, 3.1, 3.15, 3.2]
+    #Us = [3.025, 3.05, 3.075]
     biases = [0.0]
     repeat = 40
     vss  = [1/4]
     taus = [1/8]
+    order = ["LRSDSLR"]
     
     for _, L in enumerate(Ls):
 
@@ -308,136 +343,149 @@ def DPT_yastn():
 
             for k, U in enumerate(Us):
 
-                for mixed in [True, False]:
+                for mixed in [True]:
                     dpt_single = {
-                        "U": [U], #np.round(np.arange(0.1, 3.0, 0.05), 4),
+                        "U": [U],
                         "L" : [L],
                         "tfin" : [tfin],
                         "TEdim": dims,
                         "mixed": [mixed],
                         "vs" : vss,
                         "biasLR" : [bias],
-                        "n1init" : get_n1init(L, U, 'Nov14', mixed = mixed),
+                        "n1init" : get_n1init(L, U, 'Nov16', mixed = mixed),
                         "tswitch" : [tswitch],
                         "timestep": taus,
-                        # "lo" : [0.5],
-                        # 'hi' : [1.0],
+                        "order" : order,
                         "repeat" : [repeat],
                         "searchmode" : ['iterative']
-                        #"QN": [True, False],
-                        #"ddposition" : ["M", "R", "avg"],
-                        #"stagetype": ["expadiabatic"],
-                        #"ifshuffle" : [True]
                     }
 
-                    print(dpt_single)
+                    print( dpt_single["U"], dpt_single["n1init"])
+                    #print(dpt_single)
                     gen_dpt_cluster(dpt_single)
 
-# def DPT():
-def DPT_yastn_comp():
 
-    Ls = [18, 34, 66]
+
+def DPT_yastn_binary():
+
+    Ls = [64, 128]
     dims = [128]
-    Us = [2.5, 3.0, 3.5]
+    Us = [2.95, 2.975, 3.0, 3.025, 3.05, 3.075, 3.1, 3.15, 3.2]
+    #Us = [3.025, 3.05, 3.075]
     biases = [0.0]
     repeat = 40
     vss  = [1/4]
     taus = [1/8]
+    order = ["LRSDSLR"]
+
+    offset = 0.1
     
     for _, L in enumerate(Ls):
 
         for _, bias in enumerate(biases):
 
             #tfin = L * 0.9
-            tfin = (L - 2) * 3 / 4
-            tswitch = (L - 2) /4
+            tfin = L * 3 / 4
+            tswitch = L /4
+
+            for k, U in enumerate(Us):
+
+                for mixed in [True]:
+
+                    lb, ub = get_n1init(L, U, 'Nov20', mixed = mixed)
+                    print("for lo:", max(0.4, lb - offset), ub, " for hi: ", lb, min(1.0, ub + offset))
+                    dpt_single = {
+                        "U": [U],
+                        "L" : [L],
+                        "tfin" : [tfin],
+                        "TEdim": dims,
+                        "mixed": [mixed],
+                        "vs" : vss,
+                        "biasLR" : [bias],
+                        "tswitch" : [tswitch],
+                        "timestep": taus,
+                        "order" : order,
+                        "repeat" : [repeat],
+                        "searchmode" : ['binarysearch']
+                    }
+
+
+                    l = deepcopy(dpt_single)
+                    l["lo"] = [max(0.4, lb - offset)]
+                    l["hi"] = [ub]
+                    h = deepcopy(dpt_single)
+                    h["lo"] = [lb]
+                    h["hi"] = [min(1.0, ub + offset)]
+                    #print(dpt_single)
+                    gen_dpt_cluster(l)
+                    gen_dpt_cluster(h)
+
+
+
+
+def DPT_yastn_test():
+
+    Ls = [64, 128]
+    dims = [128, 256]
+    Us = [3.1]
+    #Us = [3.025, 3.05, 3.075]
+    biases = [0.0,
+              0.25
+              ]
+    repeat = 1
+    vss  = [1/4]
+    taus = [1/8]
+    merge = [True, False]
+    
+    for _, L in enumerate(Ls):
+
+        for _, bias in enumerate(biases):
+
+            #tfin = L * 0.9
+            tfin = L * 7/8
+            tswitch = L / 8 
 
             for k, U in enumerate(Us):
 
                 dpt_single = {
-                    "U": [U], #np.round(np.arange(0.1, 3.0, 0.05), 4),
+                    "U": [U],
                     "L" : [L],
                     "tfin" : [tfin],
                     "TEdim": dims,
                     "mixed": [True],
                     "vs" : vss,
+                    "merge" : merge,
                     "biasLR" : [bias],
+                    "n1init" : [0.7],
                     "tswitch" : [tswitch],
                     "timestep": taus,
-                    "n1init" : [0.6, 0.75, 0.9],
+                    "order" : ["LRSDSLR", "LSDSR"],
                     "repeat" : [repeat],
-                    #"QN": [True, False],
-                    "ddposition" : ["R"],
-                    "stagetype": ["expadiabatic"],
-                    #"ifshuffle" : [True]
+                    "searchmode" : ['iterative']
                 }
 
-                print(dpt_single)
+                #print( dpt_single["U"], dpt_single["n1init"])
                 gen_dpt_cluster(dpt_single)
 
+                dpt_single = {
+                    "U": [U],
+                    "L" : [L],
+                    "tfin" : [tfin],
+                    "TEdim": dims,
+                    "mixed": [False],
+                    "vs" : vss,
+                    "merge" : merge,
+                    "biasLR" : [bias],
+                    "n1init" : [0.7],
+                    "tswitch" : [tswitch],
+                    "timestep": taus,
+                    "order" : ["LSDSR"],
+                    "repeat" : [repeat],
+                    "searchmode" : ['iterative']
+                }
 
-
-def DPT_local_Trotter():
-
-    Ls = [10]
-    dims = [64]
-    Us = [3.05]
-    biases = [0.0]
-    repeat = 1
-    vss  = [1/4]
-    taus = [1/8]
-    
-    for _, L in enumerate(Ls):
-
-        ts = [ [ (L -2 )/4, (L - 2) * 3/ 4], [0, (L - 2 )/2]]
-
-        for _, bias in enumerate(biases):
-
-            for k, U in enumerate(Us):
-
-                for tswitch, tfin in ts:
-
-                    dpt_single = {
-                        "U": [U], #np.round(np.arange(0.1, 3.0, 0.05), 4),
-                        "L" : [L],
-                        "tfin" : [tfin],
-                        "TEdim": dims,
-                        "mixed": [True],
-                        "vs" : vss,
-                        "biasLR" : [bias],
-                        "tswitch" : [tswitch],
-                        "timestep": taus,
-                        "n1init" : [0.7],
-                        "repeat" : [repeat],
-                        #"QN": [True, False],
-                        "ddposition" : ["M", "R", "MR"],
-                        "stagetype": ["expadiabatic"],
-                        #"ifshuffle" : [True]
-                    }
-
-                    print(dpt_single)
-                    gen_dpt_cluster(dpt_single)
-
-                    dpt_single = {
-                        "U": [U], #np.round(np.arange(0.1, 3.0, 0.05), 4),
-                        "L" : [L],
-                        "tfin" : [tfin],
-                        "TEdim": dims,
-                        "mixed": [True],
-                        "vs" : vss,
-                        "biasLR" : [bias],
-                        "tswitch" : [tswitch],
-                        "timestep": [1/128],
-                        "n1init" : [0.7],
-                        "repeat" : [repeat],
-                        #"QN": [True, False],
-                        "ddposition" : ["M", "R", "MR"],
-                        "stagetype": ["expadiabatic"],
-                        "method" : ["TEBD"]
-                    }
-
-                    print(dpt_single)
-                    gen_dpt_cluster(dpt_single)
+                #print( dpt_single["U"], dpt_single["n1init"])
+                gen_dpt_cluster(dpt_single)
 
 
 if __name__ == '__main__':
@@ -455,7 +503,9 @@ if __name__ == '__main__':
     #DPT_repeat()
     #DPT_check()
     #DPT_yastn_comp()
-    DPT_yastn()
+    #DPT_yastn()
+    #DPT_yastn_binary()
+    DPT_yastn_test()
     #DPT_local_Trotter()
     #Mar()
     #transient_bias()
