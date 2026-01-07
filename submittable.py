@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import yastn.tn.mps as mps
 import json
 from hamiltonians import local_operators, Hamiltonian_dpt_position, Hamiltonian_dpt_momentum, Hamiltonian_dpt_mixed
-from auxilliary import merge_sites, op1site
+from auxilliary import merge_sites, op1site, get_current
 from sites import L, S, D, R, order_sites
 from os import getcwd, mkdir
 import os
@@ -167,6 +167,8 @@ def run_evolution(psi, NW, NS, U, muL, muR, vS0, vS1, mapping, order, merge, sym
             m12 = mps.vdot(psi, Om12, psi).real
 
             ent = psi.get_entropy()
+
+            #current = get_current()
 
             effE = np.log( np.power( np.sum( np.exp( 3 * ent)) / ( len(ent) ), 1/3))
 
@@ -355,12 +357,20 @@ def singlerun_binary_search(para):
         if np.abs(new - alpha) < 1e-5:
             break
 
+        
+        # ambiguous situation, we shrink the L, H range instead
+        # if np.abs(new - alpha) < 5e-3:
+
+        #     gap = np.abs(new - alpha)
+        #     mid = (new + alpha) / 2
+
+        # else:
         # if we have up trending:
         if new > alpha:
-            lo = new
+            lo = alpha
         
         else:
-            hi = new
+            hi = alpha
 
         
         np.savetxt( f'{curpath}/lohi', [lo, hi])

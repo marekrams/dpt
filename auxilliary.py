@@ -45,3 +45,8 @@ def merge_sites(O, s2i, merge=True):
     X = yastn.ncon(tensors, inds)
     Onew[mi] = yastn.fuse_legs(X, axes=axes)
     return Onew
+
+
+def get_current():
+
+    return 0
