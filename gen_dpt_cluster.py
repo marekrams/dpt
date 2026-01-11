@@ -315,68 +315,92 @@ def get_n1init(L, U, key, dim = None, mixed = None) :
         return d[U]
     
 
+    elif key == 'Jan8':
 
+        guess = {
+            2.95: [0.6, 0.67],
+            2.9: [0.55, 0.63]
+        }
 
+        return guess[U]
+    
+    elif key == 'Jan10':
 
+        guess = {
+            2.9 : 0.56,
+            2.95 : 0.62,
+            3.0 : 0.7016032584841878,
+            3.05 : 0.776824925340917,
+            3.1 : 0.8388404862710616,
+            3.15 : 0.8846358030703229,
+            3.2 : 0.9179932059175007,
+            3.3 : 0.9534961288439816,
+            3.4 : 0.9678187875179863,
+            3.5 : 0.9761269329599717,
+        }
+
+        return [guess[U] - 0.05, guess[U] + 0.05]
+    
     else:
         raise ValueError("Unrecognized type")
 
 def DPT_yastn():
 
-    Ls = [64, 128]
+    Ls = [256]
     dims = [128]
-    Us = [2.95, 2.975, 3.0, 3.025, 3.05, 3.075, 3.1, 3.15, 3.2]
+    Us = [2.9, 2.95, 3.0, 3.05, 3.1, 3.15]
     #Us = [3.025, 3.05, 3.075]
-    biases = [0.0]
-    repeat = 40
+    biases = [0.0,
+              #0.25
+              ]
+    repeat = 20
     vss  = [1/4]
     taus = [1/8]
-    order = ["LRSDSLR"]
-    
+    merge = [True]
+
     for _, L in enumerate(Ls):
 
         for _, bias in enumerate(biases):
 
             #tfin = L * 0.9
-            tfin = L * 3 / 4
-            tswitch = L /4
+            tfin = L * 7/8
+            tswitch = L / 8
 
             for k, U in enumerate(Us):
 
-                for mixed in [True]:
-                    dpt_single = {
-                        "U": [U],
-                        "L" : [L],
-                        "tfin" : [tfin],
-                        "TEdim": dims,
-                        "mixed": [mixed],
-                        "vs" : vss,
-                        "biasLR" : [bias],
-                        "n1init" : get_n1init(L, U, 'Nov16', mixed = mixed),
-                        "tswitch" : [tswitch],
-                        "timestep": taus,
-                        "order" : order,
-                        "repeat" : [repeat],
-                        "searchmode" : ['iterative']
-                    }
+                dpt_single = {
+                    "U": [U],
+                    "L" : [L],
+                    "tfin" : [tfin],
+                    "TEdim": dims,
+                    "mixed": [True],
+                    "vs" : vss,
+                    "merge" : merge,
+                    "biasLR" : [bias],
+                    "n1init" : get_n1init(L, U, 'Jan10'),
+                    "tswitch" : [tswitch],
+                    "timestep": taus,
+                    "order" : [ "LSDSR"],
+                    "repeat" : [repeat],
+                    "searchmode" : ['iterative']
+                }
 
-                    print( dpt_single["U"], dpt_single["n1init"])
-                    #print(dpt_single)
-                    gen_dpt_cluster(dpt_single)
+                #print( dpt_single["U"], dpt_single["n1init"])
+                gen_dpt_cluster(dpt_single)
 
 
 
 def DPT_yastn_binary():
 
-    Ls = [64, 128]
-    dims = [128]
-    Us = [2.95, 2.975, 3.0, 3.025, 3.05, 3.075, 3.1, 3.15, 3.2]
+    Ls = [64]
+    dims = [128, 256]
+    Us = [3.0]
     #Us = [3.025, 3.05, 3.075]
     biases = [0.0]
     repeat = 40
     vss  = [1/4]
     taus = [1/8]
-    order = ["LRSDSLR"]
+    order = ["LSDSR", "LRSDSLR"]
 
     offset = 0.1
     
@@ -385,8 +409,8 @@ def DPT_yastn_binary():
         for _, bias in enumerate(biases):
 
             #tfin = L * 0.9
-            tfin = L * 3 / 4
-            tswitch = L /4
+            tfin = L * 7 / 8
+            tswitch = L / 8
 
             for k, U in enumerate(Us):
 
@@ -404,6 +428,7 @@ def DPT_yastn_binary():
                         "biasLR" : [bias],
                         "tswitch" : [tswitch],
                         "timestep": taus,
+                        "merge" : [True, False],
                         "order" : order,
                         "repeat" : [repeat],
                         "searchmode" : ['binarysearch']
@@ -503,9 +528,9 @@ if __name__ == '__main__':
     #DPT_repeat()
     #DPT_check()
     #DPT_yastn_comp()
-    #DPT_yastn()
+    DPT_yastn()
     #DPT_yastn_binary()
-    DPT_yastn_test()
+    #DPT_yastn_test()
     #DPT_local_Trotter()
     #Mar()
     #transient_bias()

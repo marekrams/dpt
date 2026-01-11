@@ -15,6 +15,9 @@ import time
 from pprint import pprint
 
 
+def fprint(*msg):
+    print(*msg, flush=True)
+
 def Hamiltonian( key):
     ham = {"position": Hamiltonian_dpt_position,
                "mixed": Hamiltonian_dpt_mixed,
@@ -87,15 +90,15 @@ def initial_state(NW, NS, U, muL, muR, vS0, alpha, mapping, order, merge, sym, D
     psi.canonize_(to='last').canonize_(to='first')
 
     #info = mps.dmrg_(psi, H0, method='1site', max_sweeps=8, Schmidt_tol=1e-12)
-    #print(info)
+    #fprint(info)
     for opts_svd in [#{"D_total": D_total // 2, 'tol': 1e-12},
                      {"D_total": D_total, 'tol': 1e-12}]:
-        print("Running 2-site DMRG ... ")
+        fprint("Running 2-site DMRG ... ")
         info = mps.dmrg_(psi, H0, method='2site', opts_svd=opts_svd, max_sweeps=max2, Schmidt_tol=1e-12)
-        print(info)
-        print("Running 1-site DMRG ... ")
+        fprint(info)
+        fprint("Running 1-site DMRG ... ")
         info = mps.dmrg_(psi, H0, method='1site', max_sweeps=max1, Schmidt_tol=1e-12)
-        print(info)
+        fprint(info)
 
     O = (np.sqrt(alpha) * dn1 + np.sqrt(1 - alpha) * m12)
     O = op1site(O, 'D1', s2i, qI, dI)
@@ -108,7 +111,7 @@ def initial_state(NW, NS, U, muL, muR, vS0, alpha, mapping, order, merge, sym, D
     On1 = merge_sites(op1site(dn1, 'D1', s2i, qI, dI), s2i, merge)
     On2 = merge_sites(op1site(dn2, 'D1', s2i, qI, dI), s2i, merge)
 
-    print("Done. n1 = ", mps.vdot(psi, On1, psi), "n2 = ", mps.vdot(psi, On2, psi))
+    fprint("Done. n1 = ", mps.vdot(psi, On1, psi), "n2 = ", mps.vdot(psi, On2, psi))
 
     psidata = psi.save_to_dict()
     with open(f'{curpath}init.npy', 'wb') as f:
@@ -141,7 +144,7 @@ def run_evolution(psi, NW, NS, U, muL, muR, vS0, vS1, mapping, order, merge, sym
     H2 = merge_sites(H2, s2i, merge)
 
     opts_svd = {"D_total": D_total, 'tol': tdvptol}
-    print("Running time evolution ... ")
+    fprint("Running time evolution ... ")
     for t0, t1, H in [(0, tswitch, H1), (tswitch, tfin, H2)]:
         times = np.linspace(t0, t1, int((t1 - t0) /dt) + 1)
         times = [t0, t0+dt/128, t0+dt/64, t0+dt/32, t0+dt/16, t0+dt/8, t0+dt/4, t0+dt/2] + list(times)[1:]
@@ -150,18 +153,18 @@ def run_evolution(psi, NW, NS, U, muL, muR, vS0, vS1, mapping, order, merge, sym
         times = times[ times >= lasttime]
 
         if len(times) == 0:
-            print("Skipping stage 1")
+            fprint("Skipping stage 1")
             continue
 
         start_time = time.time()
-        #print(times)
+        #fprint(times)
         for step in mps.tdvp_(psi, H, times, method='2site', dt=dt, opts_svd=opts_svd, 
                               yield_initial=True if times[0] == 0 else False, 
                               subtract_E=True):
         
             cnt += 1
             if verbose:
-                print(step)
+                fprint(step)
 
             n1 = mps.vdot(psi, On1, psi).real
             m12 = mps.vdot(psi, Om12, psi).real
@@ -173,14 +176,17 @@ def run_evolution(psi, NW, NS, U, muL, muR, vS0, vS1, mapping, order, merge, sym
             effE = np.log( np.power( np.sum( np.exp( 3 * ent)) / ( len(ent) ), 1/3))
 
             end_time = time.time()
-            print(f"TDVP end: {step.tf}, elapsed time: {end_time - start_time}")
+            fprint(f"TDVP end: {step.tf}, elapsed time: {end_time - start_time}")
             
             total += end_time - start_time
-            print(f"Rolling average TDVP: {total/cnt}")
+            fprint(f"Rolling average TDVP: {total/cnt}")
 
             psidata = psi.save_to_dict()
-            #print(psidata)
+            #fprint(psidata)
             with open(f'{curpath}TDVPlast.npy', 'wb') as f:
+                np.save(f, psidata, allow_pickle=True)
+
+            with open(f'{curpath}TDVPlastback.npy', 'wb') as f:
                 np.save(f, psidata, allow_pickle=True)
 
             with open(f'{curpath}times', 'a') as f:
@@ -203,7 +209,7 @@ def run_evolution(psi, NW, NS, U, muL, muR, vS0, vS1, mapping, order, merge, sym
 
             start_time = time.time()
 
-    print("Done.")
+    fprint("Done.")
     return None # psi, ts, traces
 
 
@@ -235,7 +241,7 @@ def singlerun(para):
     tdvptol = 1e-6
     for i in range(repeat):
 
-        print(f"repeat: {i}")
+        fprint(f"repeat: {i}")
 
         curpath = f'{getcwd()}/results_repeat{i}/'
 
@@ -248,21 +254,25 @@ def singlerun(para):
 
             # finish!
             if lasttime == tfin:
-                print( f"iter {i} exists, skip!")
+                fprint( f"iter {i} exists, skip!")
                 alpha = np.mean(np.loadtxt( f'{curpath}n1')[-16:])
-                print( f"current alpha = {alpha}")
+                fprint( f"current alpha = {alpha}")
                 continue
             
             # we continue
             else:
-                psi0 = load_psi(f'{curpath}TDVPlast.npy', sym, message="Loading last")
+
+                try:
+                    psi0 = load_psi(f'{curpath}TDVPlast.npy', sym, message="Loading last")
+                except:
+                    psi0 = load_psi(f'{curpath}TDVPlastback.npy', sym, message="Loading last backup")
             
         # no time file, starting new!
         else:
-            print("Starting new")
+            fprint("Starting new")
             psi0 , _ = initial_state(L, NS, U, muL, muR, 0, alpha, mapping, order, merge, sym, D, curpath=curpath, max1 = max1, max2 = max2)
 
-            print(psi0)
+            fprint(psi0)
 
             lasttime = 0.0
 
@@ -271,7 +281,7 @@ def singlerun(para):
         n1 = np.loadtxt(f'{curpath}/n1')
         new = np.mean( n1[-8:])
 
-        print("new n1 last: ", new)
+        fprint("new n1 last: ", new)
 
         if np.abs(new - alpha) < 1e-5:
             break
@@ -308,7 +318,7 @@ def singlerun_binary_search(para):
 
     for i in range(repeat):
 
-        print(f"repeat: {i}")
+        fprint(f"repeat: {i}")
 
         curpath = f'{getcwd()}/results_repeat{i}/'
 
@@ -321,9 +331,9 @@ def singlerun_binary_search(para):
 
             # finish!
             if lasttime == tfin:
-                print( f"iter {i} exists, skip!")
+                fprint( f"iter {i} exists, skip!")
                 lo, hi = np.loadtxt( f'{curpath}lohi')
-                print( f"current lo = {lo}, hi = {hi}")
+                fprint( f"current lo = {lo}, hi = {hi}")
                 continue
             
             # we continue
@@ -338,17 +348,17 @@ def singlerun_binary_search(para):
             
         # no time file, starting new!
         else:
-            print("Starting new")
+            fprint("Starting new")
             alpha = (lo + hi) / 2
             psi0 , _ = initial_state(L, NS, U, muL, muR, 0, alpha, mapping, order, merge, sym, D, curpath=curpath, max1 = max1, max2 = max2)
 
-            print(psi0)
+            fprint(psi0)
 
             lasttime = 0.0
 
             
 
-        #print(psi0.save_to_dict())
+        #fprint(psi0.save_to_dict())
         run_evolution(psi0, L, NS, U, muL, muR, 0, vs, mapping, order, merge, sym, D, tswitch, tfin, dt, lasttime = lasttime, curpath = curpath, tdvptol= tdvptol, verbose=0)
 
         n1 = np.loadtxt(f'{curpath}/n1')
@@ -374,7 +384,7 @@ def singlerun_binary_search(para):
 
         
         np.savetxt( f'{curpath}/lohi', [lo, hi])
-        print(f"after simulation, lo = {lo}, hi = {hi}")
+        fprint(f"after simulation, lo = {lo}, hi = {hi}")
 
 
 
@@ -389,11 +399,11 @@ if __name__ == '__main__':
 
     if mode == 'iterative':
 
-        print("ITERATIVE")
+        fprint("ITERATIVE")
         singlerun(para)
 
     elif mode == 'binarysearch':
-        print("BINARY SEARCH")
+        fprint("BINARY SEARCH")
         singlerun_binary_search(para)
 
     else:
