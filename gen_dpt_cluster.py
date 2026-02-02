@@ -327,6 +327,8 @@ def get_n1init(L, U, key, dim = None, mixed = None) :
     elif key == 'Jan10':
 
         guess = {
+            2.8: 0.5,
+            2.85 : 0.53,
             2.9 : 0.56,
             2.95 : 0.62,
             3.0 : 0.7016032584841878,
@@ -339,21 +341,21 @@ def get_n1init(L, U, key, dim = None, mixed = None) :
             3.5 : 0.9761269329599717,
         }
 
-        return [guess[U] - 0.05, guess[U] + 0.05]
+        return [guess[U] - 0.02, guess[U], guess[U] + 0.02]
     
     else:
         raise ValueError("Unrecognized type")
 
 def DPT_yastn():
 
-    Ls = [256]
-    dims = [128]
-    Us = [2.9, 2.95, 3.0, 3.05, 3.1, 3.15]
+    Ls = [128]
+    dims = [256]
+    Us = [2.8, 2.9, 2.95, 3.0, 3.05, 3.1, 3.15]
     #Us = [3.025, 3.05, 3.075]
     biases = [0.0,
               #0.25
               ]
-    repeat = 20
+    repeat = 30
     vss  = [1/4]
     taus = [1/8]
     merge = [True]
