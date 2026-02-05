@@ -369,7 +369,7 @@ def DPT_yastn():
 
             #tfin = L * 0.9
             tfin = L * 7/8
-            tswitch = L / 8
+            tswitch = L / 4
 
             for k, U in enumerate(Us):
 
