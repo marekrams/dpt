@@ -341,9 +341,22 @@ def get_n1init(L, U, key, base = None, dim = None, mixed = None) :
                 arr = data[key]
                 mid = np.mean(arr)
 
-                return [mid - 0.02, mid + 0.02]
+                return [mid - 0.01, mid + 0.01]
             
-            
+    elif key == 'highdimFeb5':
+
+        with open(f'../fittingdata/Jan31results.pkl', 'rb') as f: # Use 'rb' for read binary mode
+            data = pickle.load(f)
+
+        if L == 96: 
+            L = 128
+
+        for key in data:
+            if L in key and U in key:
+                arr = data[key]
+                mid = np.mean(arr)
+
+                return [mid]     
 
     
     else:
@@ -352,13 +365,13 @@ def get_n1init(L, U, key, base = None, dim = None, mixed = None) :
 def DPT_yastn():
 
     Ls = [32, 64]
-    dims = [128]
+    dims = [128, 256]
     Us = [2.9, 2.95, 3.0, 3.05, 3.1, 3.15, 3.2, 3.3, 3.4]
     #Us = [3.025, 3.05, 3.075]
     biases = [0.0,
               #0.25
               ]
-    repeat = 20
+    repeat = 60
     vss  = [1/4]
     taus = [1/8]
     merge = [True]
@@ -452,70 +465,53 @@ def DPT_yastn_binary():
 
 
 
-
 def DPT_yastn_test():
 
-    Ls = [64, 128]
-    dims = [128, 256]
-    Us = [3.1]
+    Ls = [96, 128]
+    dims = [512, 1024]
+    Us = [3.05]
     #Us = [3.025, 3.05, 3.075]
     biases = [0.0,
-              0.25
+              #0.25
               ]
-    repeat = 1
+    repeat = 3
     vss  = [1/4]
     taus = [1/8]
-    merge = [True, False]
-    
+    merge = [True]
+
     for _, L in enumerate(Ls):
 
         for _, bias in enumerate(biases):
 
             #tfin = L * 0.9
             tfin = L * 7/8
-            tswitch = L / 8 
 
-            for k, U in enumerate(Us):
+            for tswitch in (L/4, L/8):
 
-                dpt_single = {
-                    "U": [U],
-                    "L" : [L],
-                    "tfin" : [tfin],
-                    "TEdim": dims,
-                    "mixed": [True],
-                    "vs" : vss,
-                    "merge" : merge,
-                    "biasLR" : [bias],
-                    "n1init" : [0.7],
-                    "tswitch" : [tswitch],
-                    "timestep": taus,
-                    "order" : ["LRSDSLR", "LSDSR"],
-                    "repeat" : [repeat],
-                    "searchmode" : ['iterative']
-                }
+                for k, U in enumerate(Us):
 
-                #print( dpt_single["U"], dpt_single["n1init"])
-                gen_dpt_cluster(dpt_single)
+                    dpt_single = {
+                        "U": [U],
+                        "L" : [L],
+                        "tfin" : [tfin],
+                        "TEdim": dims,
+                        "mixed": [True],
+                        "vs" : vss,
+                        "merge" : merge,
+                        "biasLR" : [bias],
+                        "n1init" : get_n1init(L, U, 'highdimFeb5'),
+                        "tswitch" : [tswitch],
+                        "timestep": taus,
+                        "order" : [ "LSDSR"],
+                        "repeat" : [repeat],
+                        "searchmode" : ['iterative']
+                    }
 
-                dpt_single = {
-                    "U": [U],
-                    "L" : [L],
-                    "tfin" : [tfin],
-                    "TEdim": dims,
-                    "mixed": [False],
-                    "vs" : vss,
-                    "merge" : merge,
-                    "biasLR" : [bias],
-                    "n1init" : [0.7],
-                    "tswitch" : [tswitch],
-                    "timestep": taus,
-                    "order" : ["LSDSR"],
-                    "repeat" : [repeat],
-                    "searchmode" : ['iterative']
-                }
+                    #print( dpt_single["U"], dpt_single["n1init"])
+                    gen_dpt_cluster(dpt_single)
 
-                #print( dpt_single["U"], dpt_single["n1init"])
-                gen_dpt_cluster(dpt_single)
+
+
 
 
 if __name__ == '__main__':
@@ -534,7 +530,8 @@ if __name__ == '__main__':
     #DPT_check()
     #DPT_yastn_comp()
     #DPT_yastn()
-    changerepeat()
+    DPT_yastn_test()
+    #changerepeat()
     #DPT_yastn_binary()
     #DPT_yastn_test()
     #DPT_local_Trotter()
