@@ -8,6 +8,26 @@ from shutil import copy2
 from scipy.interpolate import CubicSpline
 from scipy.optimize import curve_fit
 from os import path
+import pickle
+from glob import glob
+
+def changerepeat():
+
+    pwd = os.getcwd()
+    ds = glob( f'{pwd}/U*' )
+
+    for d in ds:
+
+        with open(f'{d}/dptpara.json', "r") as f:
+            old = json.load(f)
+            
+        old['repeat'] = 40
+        with open(f'{d}/dptpara.json', "w") as f:
+            json.dump(old, f, indent = 4)
+
+    
+
+
 
 def gen_time(new, timecontrol):
 
@@ -63,37 +83,6 @@ def gen_time(new, timecontrol):
 
 def gen_dpt_cluster(categories : dict, toplevel = ''):
 
-    # dptpara = {
-    #     "U": 3.0,
-    #     "L": 64,
-    #     "R": 64,
-    #     "tswitch": 0,
-    #     "tfin" : 64.0,
-    #     "timestep": 0.25,
-    #     "TEdim": 64,
-    #     "mixed": True,
-    #     "ordering": "SORTED",
-    #     "QPCmixed": False,
-    #     "sweepcnt" : 20,
-    #     "ddposition": "R",
-    #     "vs" : 0.25,
-    #     "avg" : False,
-    #     "switchinterval" : 1,
-    #     "initdd" : "UPPER",
-    #     "QN" : True,
-    #     "biasLR" : 0.0,
-    #     "mode" : "disconnectDD",
-    #     "fitmode" : "linear",
-    #     "n1init" : 1.0,
-    #     "repeat" : 10,
-    #     "stagetype" : "uniform",
-    #     "ifshuffle" : False,
-    #     "Trotterfirst" : False,
-    #     "method" : "TDVP",
-    #     'lo' : 0.5,
-    #     'hi' : 1.0,
-    #     'searchmode' : 'iterative'
-    # }
 
     dptpara = {
         "U": 3.2,
@@ -231,7 +220,7 @@ def direct_load(f):
 
 
 
-def get_n1init(L, U, key, dim = None, mixed = None) :
+def get_n1init(L, U, key, base = None, dim = None, mixed = None) :
 
     # Guesses for Nov 3 test
 
@@ -327,8 +316,8 @@ def get_n1init(L, U, key, dim = None, mixed = None) :
     elif key == 'Jan10':
 
         guess = {
-            2.9 : 0.56,
-            2.95 : 0.62,
+            2.9 : 0.52,
+            2.95 : 0.57,
             3.0 : 0.7016032584841878,
             3.05 : 0.776824925340917,
             3.1 : 0.8388404862710616,
@@ -341,14 +330,30 @@ def get_n1init(L, U, key, dim = None, mixed = None) :
 
         return [guess[U] - 0.05, guess[U] + 0.05]
     
+    elif key == 'Jan31':
+
+        with open(f'../fittingdata/Jan31results.pkl', 'rb') as f: # Use 'rb' for read binary mode
+            data = pickle.load(f)
+
+        for key in data:
+
+            if L in key and U in key:
+                arr = data[key]
+                mid = np.mean(arr)
+
+                return [mid - 0.02, mid + 0.02]
+            
+            
+
+    
     else:
         raise ValueError("Unrecognized type")
 
 def DPT_yastn():
 
-    Ls = [256]
+    Ls = [32, 64]
     dims = [128]
-    Us = [2.9, 2.95, 3.0, 3.05, 3.1, 3.15]
+    Us = [2.9, 2.95, 3.0, 3.05, 3.1, 3.15, 3.2, 3.3, 3.4]
     #Us = [3.025, 3.05, 3.075]
     biases = [0.0,
               #0.25
@@ -377,7 +382,7 @@ def DPT_yastn():
                     "vs" : vss,
                     "merge" : merge,
                     "biasLR" : [bias],
-                    "n1init" : get_n1init(L, U, 'Jan10'),
+                    "n1init" : get_n1init(L, U, 'Jan31'),
                     "tswitch" : [tswitch],
                     "timestep": taus,
                     "order" : [ "LSDSR"],
@@ -528,7 +533,8 @@ if __name__ == '__main__':
     #DPT_repeat()
     #DPT_check()
     #DPT_yastn_comp()
-    DPT_yastn()
+    #DPT_yastn()
+    changerepeat()
     #DPT_yastn_binary()
     #DPT_yastn_test()
     #DPT_local_Trotter()
