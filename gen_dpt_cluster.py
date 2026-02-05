@@ -316,8 +316,15 @@ def get_n1init(L, U, key, base = None, dim = None, mixed = None) :
     elif key == 'Jan10':
 
         guess = {
+<<<<<<< HEAD
             2.9 : 0.52,
             2.95 : 0.57,
+=======
+            2.8: 0.5,
+            2.85 : 0.53,
+            2.9 : 0.56,
+            2.95 : 0.62,
+>>>>>>> d51a6535663597a9e17c085983d9900080545da2
             3.0 : 0.7016032584841878,
             3.05 : 0.776824925340917,
             3.1 : 0.8388404862710616,
@@ -328,7 +335,7 @@ def get_n1init(L, U, key, base = None, dim = None, mixed = None) :
             3.5 : 0.9761269329599717,
         }
 
-        return [guess[U] - 0.05, guess[U] + 0.05]
+        return [guess[U] - 0.02, guess[U], guess[U] + 0.02]
     
     elif key == 'Jan31':
 
@@ -351,14 +358,20 @@ def get_n1init(L, U, key, base = None, dim = None, mixed = None) :
 
 def DPT_yastn():
 
+<<<<<<< HEAD
     Ls = [32, 64]
     dims = [128]
     Us = [2.9, 2.95, 3.0, 3.05, 3.1, 3.15, 3.2, 3.3, 3.4]
+=======
+    Ls = [128]
+    dims = [256]
+    Us = [2.8, 2.9, 2.95, 3.0, 3.05, 3.1, 3.15]
+>>>>>>> d51a6535663597a9e17c085983d9900080545da2
     #Us = [3.025, 3.05, 3.075]
     biases = [0.0,
               #0.25
               ]
-    repeat = 20
+    repeat = 30
     vss  = [1/4]
     taus = [1/8]
     merge = [True]
