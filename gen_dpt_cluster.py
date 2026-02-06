@@ -101,8 +101,8 @@ def gen_dpt_cluster(categories : dict, toplevel = ''):
         "lo" : 0.5,
         "hi" : 1.0,
         "searchmode" : "iterative",
-        "max1" : 1024,
-        "max2" : 128,
+        "max1" : 256,
+        "max2" : 64,
         "merge" : True
     }
     keys = list(categories.keys())
@@ -347,12 +347,12 @@ def get_n1init(L, U, key, base = None, dim = None, mixed = None) :
 
         with open(f'../fittingdata/Jan31results.pkl', 'rb') as f: # Use 'rb' for read binary mode
             data = pickle.load(f)
-
+        
         if L == 96: 
             L = 128
 
         for key in data:
-            if L in key and U in key:
+            if f'L{L}' in key and f'U{U}' in key:
                 arr = data[key]
                 mid = np.mean(arr)
 

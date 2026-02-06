@@ -8,6 +8,8 @@ from auxilliary import merge_sites, op1site, get_current
 from sites import L, S, D, R, order_sites
 from os import getcwd, mkdir
 import os
+#import yastn.backend.backend_torch as backend
+#import cupy as cp
 
 from utils import *
 
@@ -60,12 +62,13 @@ def init_occupations(mapping, NW, NS):
     return occ
 
 
-def initial_state(NW, NS, U, muL, muR, vS0, alpha, mapping, order, merge, sym, D_total, curpath = '', muDs=[0, 10000], max2 = 4, max1 = 256):
+def initial_state(NW, NS, U, muL, muR, vS0, alpha, mapping, order, merge, sym, D_total, curpath = '', muDs=[0, 10000], max2 = 4, max1 = 256, **config_kwargs):
 
     if os.path.isfile( f'{curpath}init.npy'):
-        psi = load_psi(f'{curpath}init.npy', sym, message = "loading init")
+        psi = load_psi(f'{curpath}init.npy', sym, message = "loading init", **config_kwargs)
         energy = np.loadtxt(f'{curpath}initenergy' )
         return psi, energy
+    
 
     sites = order_sites(mapping, order, NW, NS)
     init_occ = init_occupations(mapping, NW, NS)
@@ -80,9 +83,10 @@ def initial_state(NW, NS, U, muL, muR, vS0, alpha, mapping, order, merge, sym, D
     else:
         raise ValueError("Only sym = 'U1' or 'Z2' suported.")
 
-    H0, s2i, i2s = Hamiltonian(mapping)(NW, NS, muL, muR, muDs, vS0, U * (2 * alpha - 1), sym=sym, order=sites)
-    qI, qc, qcp, qn, dx, dn1, dn2, dI, m12, m21 = local_operators(sym=sym)
+    H0, s2i, i2s = Hamiltonian(mapping)(NW, NS, muL, muR, muDs, vS0, U * (2 * alpha - 1), sym=sym, order=sites, **config_kwargs)
+    qI, qc, qcp, qn, dx, dn1, dn2, dI, m12, m21 = local_operators(sym=sym, **config_kwargs)
 
+    
     psi = mps.random_mps(H0, n=n_profile, D_total=D_total, sigma=2, distribution='normal')
 
     H0 = merge_sites(H0, s2i, merge)
@@ -93,6 +97,11 @@ def initial_state(NW, NS, U, muL, muR, vS0, alpha, mapping, order, merge, sym, D
     #fprint(info)
     for opts_svd in [#{"D_total": D_total // 2, 'tol': 1e-12},
                      {"D_total": D_total, 'tol': 1e-12}]:
+        
+        fprint("Running 1-site DMRG ... ")
+        info = mps.dmrg_(psi, H0, method='1site', opts_svd=opts_svd, max_sweeps=8, Schmidt_tol=1e-12)
+        fprint(info)
+
         fprint("Running 2-site DMRG ... ")
         info = mps.dmrg_(psi, H0, method='2site', opts_svd=opts_svd, max_sweeps=max2, Schmidt_tol=1e-12)
         fprint(info)
@@ -123,7 +132,7 @@ def initial_state(NW, NS, U, muL, muR, vS0, alpha, mapping, order, merge, sym, D
     return psi, info.energy
 
 
-def run_evolution(psi, NW, NS, U, muL, muR, vS0, vS1, mapping, order, merge, sym, D_total, tswitch, tfin, dt, lasttime = 0, muDs=[0, 0], curpath = '', verbose=0, tdvptol = 1e-6):
+def run_evolution(psi, NW, NS, U, muL, muR, vS0, vS1, mapping, order, merge, sym, D_total, tswitch, tfin, dt, lasttime = 0, muDs=[0, 0], curpath = '', verbose=0, tdvptol = 1e-8, **config_kwargs):
 
     sites = order_sites(mapping, order, NW, NS=4)
     #pprint(sites)
@@ -133,7 +142,7 @@ def run_evolution(psi, NW, NS, U, muL, muR, vS0, vS1, mapping, order, merge, sym
 
     H1, s2i, i2s = Hamiltonian(mapping)(NW, NS, muL, muR, muDs, vS0, U, sym=sym, order=sites)
     H2, s2i, i2s = Hamiltonian(mapping)(NW, NS, muL, muR, muDs, vS1, U, sym=sym, order=sites)
-    qI, qc, qcp, qn, dx, dn1, dn2, dI, m12, m21 = local_operators(sym=sym)
+    qI, qc, qcp, qn, dx, dn1, dn2, dI, m12, m21 = local_operators(sym=sym, **config_kwargs)
 
     On1 = merge_sites(op1site(dn1, 'D1', s2i, qI, dI), s2i, merge)
     On2 = merge_sites(op1site(dn2, 'D1', s2i, qI, dI), s2i, merge)
@@ -214,7 +223,7 @@ def run_evolution(psi, NW, NS, U, muL, muR, vS0, vS1, mapping, order, merge, sym
 
 
 
-def singlerun(para):
+def singlerun(para, config_kwargs):
 
 
     L = int(para['L'])
@@ -263,20 +272,21 @@ def singlerun(para):
             else:
 
                 try:
-                    psi0 = load_psi(f'{curpath}TDVPlast.npy', sym, message="Loading last")
+                    psi0 = load_psi(f'{curpath}TDVPlast.npy', sym, message="Loading last", **config_kwargs)
                 except:
-                    psi0 = load_psi(f'{curpath}TDVPlastback.npy', sym, message="Loading last backup")
+                    psi0 = load_psi(f'{curpath}TDVPlastback.npy', sym, message="Loading last backup", **config_kwargs)
             
         # no time file, starting new!
         else:
             fprint("Starting new")
-            psi0 , _ = initial_state(L, NS, U, muL, muR, 0, alpha, mapping, order, merge, sym, D, curpath=curpath, max1 = max1, max2 = max2)
+
+            psi0 , _ = initial_state(L, NS, U, muL, muR, 0, alpha, mapping, order, merge, sym, D, curpath=curpath, max1 = max1, max2 = max2, **config_kwargs)
 
             fprint(psi0)
 
             lasttime = 0.0
 
-        run_evolution(psi0, L, NS, U, muL, muR, 0, vs, mapping, order, merge, sym, D, tswitch, tfin, dt, lasttime = lasttime, curpath = curpath, tdvptol= tdvptol, verbose=0)
+        run_evolution(psi0, L, NS, U, muL, muR, 0, vs, mapping, order, merge, sym, D, tswitch, tfin, dt, lasttime = lasttime, curpath = curpath, tdvptol= tdvptol, verbose=0, **config_kwargs)
 
         n1 = np.loadtxt(f'{curpath}/n1')
         new = np.mean( n1[-8:])
@@ -397,14 +407,31 @@ if __name__ == '__main__':
 
     mode = para['searchmode']
 
+    try:
+        gpu = para['GPU']
+
+
+        if gpu == True:
+            pprint("USING GPU")
+            #np = cp
+            config_kwargs = {"backend": "torch"}
+        
+        else:
+            pprint("USING CPU")
+            config_kwargs = {"backend": "np"}
+    except:
+
+        config_kwargs = {"backend": "np"}
+
+
     if mode == 'iterative':
 
         fprint("ITERATIVE")
-        singlerun(para)
+        singlerun(para, config_kwargs)
 
     elif mode == 'binarysearch':
         fprint("BINARY SEARCH")
-        singlerun_binary_search(para)
-
+        singlerun_binary_search(para, config_kwargs)
+        
     else:
         raise ValueError("not recognized searchmode")

@@ -15,5 +15,6 @@
     "max2" : 128,
     "order": "LSDSR",
     "merge" : true,
-    "searchmode" : "iterative"
+    "searchmode" : "iterative",
+    "GPU" : true
 }

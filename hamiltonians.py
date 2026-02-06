@@ -6,8 +6,8 @@ from pprint import pprint
 
 
 
-def  local_operators(sym='U1'):
-    ops = yastn.operators.SpinlessFermions(sym=sym)
+def  local_operators(sym='U1', **config_kwargs):
+    ops = yastn.operators.SpinlessFermions(sym=sym, **config_kwargs)
     qI, qc, qcp, qn = ops.I(), ops.c(), ops.cp(), ops.n()
     dx = yastn.Tensor(config=qI.config, s=qI.s)
     dx.set_block(ts=(0, 0), val=[[0, 1], [1, 0]], Ds=(2, 2))
@@ -24,10 +24,10 @@ def  local_operators(sym='U1'):
     return qI, qc, qcp, qn, dx, dn1, dn2, dI, m12, m21
 
 
-def Hamiltonian_dpt_position(NW, NS, muL, muR, muDs, vS, U, w0=1, order='DLSR', sym='U1'):
+def Hamiltonian_dpt_position(NW, NS, muL, muR, muDs, vS, U, w0=1, order='DLSR', sym='U1', **config_kwargs):
     """ generate MPO for DPT in position basis. first dot is interacting with 4 sites """
     #
-    qI, qc, qcp, qn, dx, dn1, dn2, dI, m12, m21 = local_operators(sym=sym)
+    qI, qc, qcp, qn, dx, dn1, dn2, dI, m12, m21 = local_operators(sym=sym, **config_kwargs)
     NS = 4
     #
     vL = vR = vLR = w0
@@ -90,10 +90,10 @@ def Hamiltonian_dpt_position(NW, NS, muL, muR, muDs, vS, U, w0=1, order='DLSR', 
     return H, s2i, i2s
 
 
-def Hamiltonian_dpt_momentum(NW, NS, muL, muR, muDs, vS, U, w0=1, order='DLR', sym='U1'):
+def Hamiltonian_dpt_momentum(NW, NS, muL, muR, muDs, vS, U, w0=1, order='DLR', sym='U1', **config_kwargs):
     """ generate mpo for dpt model in mixed basis """
     #
-    qI, qc, qcp, qn, dx, dn1, dn2, dI, m12, m21 = local_operators(sym=sym)
+    qI, qc, qcp, qn, dx, dn1, dn2, dI, m12, m21 = local_operators(sym=sym, **config_kwargs)
     #
     vL = vR = vLR = w0
     #
@@ -146,10 +146,10 @@ def Hamiltonian_dpt_momentum(NW, NS, muL, muR, muDs, vS, U, w0=1, order='DLR', s
 
 
 
-def Hamiltonian_dpt_mixed(NW, NS, muL, muR, muDs, vS, U, w0=1, order = [], sym='U1'):
+def Hamiltonian_dpt_mixed(NW, NS, muL, muR, muDs, vS, U, w0=1, order = [], sym='U1', **config_kwargs):
     """ generate mpo for dpt model in mixed basis """
 
-    qI, qc, qcp, qn, dx, dn1, dn2, dI, m12, m21 = local_operators(sym=sym)
+    qI, qc, qcp, qn, dx, dn1, dn2, dI, m12, m21 = local_operators(sym=sym, **config_kwargs)
     #
     vL = vR = vLR = w0
     #
