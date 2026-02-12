@@ -356,57 +356,26 @@ def get_n1init(L, U, key, base = None, dim = None, mixed = None) :
                 arr = data[key]
                 mid = np.mean(arr)
 
-                return [mid]     
+                return [mid]    
+
+    elif key == "Feb10vs0.75":
+
+        # hardcoded init data
+        Us = [3.0, 3.25, 3.5, 3.75, 4.0, 4.5, 5.0]
+        vals = [0.51, 0.52, 0.6, 0.88, 0.93, 0.96, 0.98]
+
+        spl = CubicSpline(Us, vals)
+        assert U > min(Us) and U < max(Us)
+
+        val = spl(U)
+
+        guess = [val - 0.05, val + 0.05]
+        print(U, guess)
+        return np.round(guess, decimals=5)
 
     
     else:
         raise ValueError("Unrecognized type")
-
-def DPT_yastn():
-
-    Ls = [32, 64]
-    dims = [128, 256]
-    Us = [2.9, 2.95, 3.0, 3.05, 3.1, 3.15, 3.2, 3.3, 3.4]
-    #Us = [3.025, 3.05, 3.075]
-    biases = [0.0,
-              #0.25
-              ]
-    repeat = 60
-    vss  = [1/4]
-    taus = [1/8]
-    merge = [True]
-
-    for _, L in enumerate(Ls):
-
-        for _, bias in enumerate(biases):
-
-            #tfin = L * 0.9
-            tfin = L * 7/8
-            tswitch = L / 4
-
-            for k, U in enumerate(Us):
-
-                dpt_single = {
-                    "U": [U],
-                    "L" : [L],
-                    "tfin" : [tfin],
-                    "TEdim": dims,
-                    "mixed": [True],
-                    "vs" : vss,
-                    "merge" : merge,
-                    "biasLR" : [bias],
-                    "n1init" : get_n1init(L, U, 'Jan31'),
-                    "tswitch" : [tswitch],
-                    "timestep": taus,
-                    "order" : [ "LSDSR"],
-                    "repeat" : [repeat],
-                    "searchmode" : ['iterative']
-                }
-
-                #print( dpt_single["U"], dpt_single["n1init"])
-                gen_dpt_cluster(dpt_single)
-
-
 
 def DPT_yastn_binary():
 
@@ -467,15 +436,15 @@ def DPT_yastn_binary():
 
 def DPT_yastn_test():
 
-    Ls = [96, 128]
-    dims = [512, 1024]
-    Us = [3.05]
+    Ls = [32, 128]
+    dims = [128]
+    Us = np.round(np.arange(3.05, 4.0, 0.05), decimals=5)
     #Us = [3.025, 3.05, 3.075]
     biases = [0.0,
               #0.25
               ]
-    repeat = 3
-    vss  = [1/4]
+    repeat = 20
+    vss  = [3/4]
     taus = [1/8]
     merge = [True]
 
@@ -486,7 +455,7 @@ def DPT_yastn_test():
             #tfin = L * 0.9
             tfin = L * 7/8
 
-            for tswitch in (L/4, L/8):
+            for tswitch in [L/4]:
 
                 for k, U in enumerate(Us):
 
@@ -499,7 +468,7 @@ def DPT_yastn_test():
                         "vs" : vss,
                         "merge" : merge,
                         "biasLR" : [bias],
-                        "n1init" : get_n1init(L, U, 'highdimFeb5'),
+                        "n1init" : get_n1init(L, U, 'Feb10vs0.75'),
                         "tswitch" : [tswitch],
                         "timestep": taus,
                         "order" : [ "LSDSR"],
