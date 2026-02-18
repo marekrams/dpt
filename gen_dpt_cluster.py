@@ -381,6 +381,26 @@ def get_n1init(L, U, key, base = None, dim = None, mixed = None) :
         for key in data:
             if f'L{L}' in key and f'U{U}' in key:
                 return [data[key] ]
+            
+    elif key == 'Feb17short':
+
+        assert L == 16
+
+        Lsub = 32
+        Usub = np.round(U - 0.2, decimals=5)
+
+        print(Lsub, Usub)
+
+        if Usub > 3.9:
+            return [0.9]
+        
+        with open(f'../fittingdata/Feb17results.pkl', 'rb') as f: # Use 'rb' for read binary mode
+            data = pickle.load(f)
+        
+        for key in data:
+            if f'L{Lsub}' in key and f'U{Usub}' in key:
+                return [data[key] ]
+
     else:
         raise ValueError("Unrecognized type")
 
@@ -443,14 +463,14 @@ def DPT_yastn_binary():
 
 def DPT_yastn_test():
 
-    Ls = [32, 64]
+    Ls = [16]
     dims = [128]
-    Us = np.round(np.arange(3.3, 4.0, 0.05), decimals=5)
+    Us = np.round(np.arange(3.5, 4.5, 0.05), decimals=5)
     #Us = [3.025, 3.05, 3.075]
     biases = [0.0,
               #0.25
               ]
-    repeat = 30
+    repeat = 80
     vss  = [3/4]
     taus = [1/8]
     merge = [True]
@@ -475,7 +495,7 @@ def DPT_yastn_test():
                         "vs" : vss,
                         "merge" : merge,
                         "biasLR" : [bias],
-                        "n1init" : get_n1init(L, U, 'Feb12'),
+                        "n1init" : get_n1init(L, U, 'Feb17short'),
                         "tswitch" : [tswitch],
                         "timestep": taus,
                         "order" : [ "LSDSR"],
