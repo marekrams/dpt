@@ -178,6 +178,8 @@ def run_evolution(psi, NW, NS, U, muL, muR, vS0, vS1, mapping, order, merge, sym
             n1 = mps.vdot(psi, On1, psi).real
             m12 = mps.vdot(psi, Om12, psi).real
 
+            occs = [ mps.vdot(psi, Ons[s], psi).real for s in sites if s != 'D1']
+
             ent = psi.get_entropy()
 
             #current = get_current()
@@ -200,6 +202,9 @@ def run_evolution(psi, NW, NS, U, muL, muR, vS0, vS1, mapping, order, merge, sym
 
             with open(f'{curpath}times', 'a') as f:
                 np.savetxt( f, [step.tf])
+
+            with open(f'{curpath}occs', 'a') as f:
+                np.savetxt( f, [occs], fmt = '%.4g')
 
             with open(f'{curpath}n1', 'a') as f:
                 np.savetxt( f, [n1])
