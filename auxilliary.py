@@ -11,6 +11,16 @@ def op1site(op, site, s2i, qI, dI):
     return mps.product_mpo(oo)
 
 
+def op2site(op1, site1, op2, site2, s2i, qI, dI):
+    ind1 = s2i[site1]
+    ind2 = s2i[site2]
+    sd = s2i['D1']
+    oo = sd * [qI] + [dI] + (len(s2i) - 1 - sd) * [qI]
+    oo[ind1] = op1
+    oo[ind2] = op2
+    return mps.product_mpo(oo)
+
+
 def merge_sites(O, s2i, merge=True):
     if not merge:
         return O
@@ -47,6 +57,19 @@ def merge_sites(O, s2i, merge=True):
     return Onew
 
 
-def get_current():
+def get_current(psi,  s2i, qc, qcp, qI, dI, merge, method = None):
 
-    return 0
+    if method == 'op2site':
+        op = merge_sites(op2site(qcp, 'S2', qc, 'S3', s2i, qI, dI), s2i, merge)
+        current = 2 * mps.vdot(psi, op, psi).imag
+    
+    elif method == 'inner':
+        op1 = merge_sites(op1site(qcp, 'S2', s2i, qI, dI), s2i, merge)
+        op2 = merge_sites(op1site(qc, 'S3', s2i, qI, dI), s2i, merge)
+
+        psiprime = psi
+        psiprime = op2 @ psiprime
+        psiprime = op1 @ psiprime
+
+        current = 2 * mps.vdot(psi, psiprime).imag
+    return current

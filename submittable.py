@@ -182,6 +182,9 @@ def run_evolution(psi, NW, NS, U, muL, muR, vS0, vS1, mapping, order, merge, sym
 
             ent = psi.get_entropy()
 
+            current1 = get_current(psi, s2i, qc, qcp, qI, dI, merge, method = 'op2site')
+            current2 = get_current(psi, s2i, qc, qcp, qI, dI, merge, method = 'inner')
+
             #current = get_current()
 
             effE = np.log( np.power( np.sum( np.exp( 3 * ent)) / ( len(ent) ), 1/3))
@@ -202,6 +205,12 @@ def run_evolution(psi, NW, NS, U, muL, muR, vS0, vS1, mapping, order, merge, sym
 
             with open(f'{curpath}times', 'a') as f:
                 np.savetxt( f, [step.tf])
+
+            with open(f'{curpath}current1', 'a') as f:
+                np.savetxt( f, [current1])
+
+            with open(f'{curpath}current2', 'a') as f:
+                np.savetxt( f, [current2])
 
             with open(f'{curpath}occs', 'a') as f:
                 np.savetxt( f, [occs], fmt = '%.4g')
