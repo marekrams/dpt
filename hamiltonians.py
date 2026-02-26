@@ -86,8 +86,10 @@ def Hamiltonian_dpt_position(NW, NS, muL, muR, muDs, vS, U, w0=1, order='DLSR', 
         terms.append((U, (D(1), S(k)), [dn1 - dI / 2, qn - qI / 2]))
 
     Hterms = [mps.Hterm(v, tuple(s2i[x] for x in p), o) for v, p, o in terms]
+
+    M = draw_ham(terms, s2i, i2s)
     H = mps.generate_mpo(II, Hterms)
-    return H, s2i, i2s
+    return H, s2i, i2s, M
 
 
 def Hamiltonian_dpt_momentum(NW, NS, muL, muR, muDs, vS, U, w0=1, order='DLR', sym='U1', **config_kwargs):
@@ -141,8 +143,11 @@ def Hamiltonian_dpt_momentum(NW, NS, muL, muR, muDs, vS, U, w0=1, order='DLR', s
     terms.append((-NS * U / 2, [D(1)], [dn1 - dI / 2]))
 
     Hterms = [mps.Hterm(v, tuple(s2i[x] for x in p), o) for v, p, o in terms]
+
+    M = draw_ham(terms, s2i, i2s)
+
     H = mps.generate_mpo(II, Hterms)
-    return H, s2i, i2s
+    return H, s2i, i2s, M
 
 
 
@@ -218,6 +223,43 @@ def Hamiltonian_dpt_mixed(NW, NS, muL, muR, muDs, vS, U, w0=1, order = [], sym='
         terms.append((U, (D(1), S(k)), [dn1 - dI / 2, qn - qI / 2]))
 
     Hterms = [mps.Hterm(v, tuple(s2i[x] for x in p), o) for v, p, o in terms]
+    M = draw_ham(terms, s2i, i2s)
 
     H = mps.generate_mpo(II, Hterms)
-    return H, s2i, i2s
+    return H, s2i, i2s, M
+
+
+
+
+def draw_ham(terms, s2i, i2s):
+
+    L = len(s2i)
+    M = np.zeros((L, L), dtype = '<U30')
+
+    for i in range(L):
+        for j in range(L):
+            M[i, j] = ''
+
+
+    for coup, ss, _ in terms:
+
+        if len(ss) == 1:
+            ind = s2i[ss[0]]
+
+            if M[ind, ind] == '':
+                M[ind, ind] = i2s[ind] + i2s[ind] + ':'
+
+            M[ind, ind] += ' + ' + str(coup)[:8]
+
+
+        else:
+            ind1 = s2i[ss[0]]
+            ind2 = s2i[ss[1]]
+
+            if M[ind1, ind2] == '':
+                M[ind1, ind2] = i2s[ind1] + i2s[ind2] + ':'
+            M[ind1, ind2] += ' + ' + str(coup)[:8]  
+
+
+    print(M)
+    return M

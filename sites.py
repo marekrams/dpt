@@ -56,7 +56,7 @@ def order_sites(mapping, order, NW, NS=4, muL =0.0, muR = 0.0, vL = 1.0, vR = 1.
 
     if mapping == 'mixed':
         if order in ['DLSR', 'LSDSR']:
-            return order_sites('position', order, NW, NS)
+            return order_sites('position', order, NW, NS = NS)
         if order in ['LRSDSLR', 'DLRSLR']:
             # sites = []
             # for k in range(1, NW + 1):

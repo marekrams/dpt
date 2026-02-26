@@ -422,60 +422,60 @@ def get_n1init(L, U, key, base = None, dim = None, mixed = None) :
     else:
         raise ValueError("Unrecognized type")
 
-def DPT_yastn_binary():
+# def DPT_yastn_binary():
 
-    Ls = [64]
-    dims = [128, 256]
-    Us = [3.0]
-    #Us = [3.025, 3.05, 3.075]
-    biases = [0.0]
-    repeat = 40
-    vss  = [1/4]
-    taus = [1/8]
-    order = ["LSDSR", "LRSDSLR"]
+#     Ls = [64]
+#     dims = [128, 256]
+#     Us = [3.0]
+#     #Us = [3.025, 3.05, 3.075]
+#     biases = [0.0]
+#     repeat = 40
+#     vss  = [1/4]
+#     taus = [1/8]
+#     order = ["LSDSR", "LRSDSLR"]
 
-    offset = 0.1
+#     offset = 0.1
     
-    for _, L in enumerate(Ls):
+#     for _, L in enumerate(Ls):
 
-        for _, bias in enumerate(biases):
+#         for _, bias in enumerate(biases):
 
-            #tfin = L * 0.9
-            tfin = L * 7 / 8
-            tswitch = L / 8
+#             #tfin = L * 0.9
+#             tfin = L * 7 / 8
+#             tswitch = L / 8
 
-            for k, U in enumerate(Us):
+#             for k, U in enumerate(Us):
 
-                for mixed in [True]:
+#                 for mixed in [True]:
 
-                    lb, ub = get_n1init(L, U, 'Nov20', mixed = mixed)
-                    print("for lo:", max(0.4, lb - offset), ub, " for hi: ", lb, min(1.0, ub + offset))
-                    dpt_single = {
-                        "U": [U],
-                        "L" : [L],
-                        "tfin" : [tfin],
-                        "TEdim": dims,
-                        "mixed": [mixed],
-                        "vs" : vss,
-                        "biasLR" : [bias],
-                        "tswitch" : [tswitch],
-                        "timestep": taus,
-                        "merge" : [True, False],
-                        "order" : order,
-                        "repeat" : [repeat],
-                        "searchmode" : ['binarysearch']
-                    }
+#                     lb, ub = get_n1init(L, U, 'Nov20', mixed = mixed)
+#                     print("for lo:", max(0.4, lb - offset), ub, " for hi: ", lb, min(1.0, ub + offset))
+#                     dpt_single = {
+#                         "U": [U],
+#                         "L" : [L],
+#                         "tfin" : [tfin],
+#                         "TEdim": dims,
+#                         "mixed": [mixed],
+#                         "vs" : vss,
+#                         "biasLR" : [bias],
+#                         "tswitch" : [tswitch],
+#                         "timestep": taus,
+#                         "merge" : [True, False],
+#                         "order" : order,
+#                         "repeat" : [repeat],
+#                         "searchmode" : ['binarysearch']
+#                     }
 
 
-                    l = deepcopy(dpt_single)
-                    l["lo"] = [max(0.4, lb - offset)]
-                    l["hi"] = [ub]
-                    h = deepcopy(dpt_single)
-                    h["lo"] = [lb]
-                    h["hi"] = [min(1.0, ub + offset)]
-                    #print(dpt_single)
-                    gen_dpt_cluster(l)
-                    gen_dpt_cluster(h)
+#                     l = deepcopy(dpt_single)
+#                     l["lo"] = [max(0.4, lb - offset)]
+#                     l["hi"] = [ub]
+#                     h = deepcopy(dpt_single)
+#                     h["lo"] = [lb]
+#                     h["hi"] = [min(1.0, ub + offset)]
+#                     #print(dpt_single)
+#                     gen_dpt_cluster(l)
+#                     gen_dpt_cluster(h)
 
 
 
@@ -526,6 +526,73 @@ def DPT_yastn_test():
 
 
 
+def DPT_bias_test():
+
+    Ls = [64]
+    dims = [128]
+    Us = np.round(np.array([3.4, 3.6, 3.9]), decimals=5)
+    #Us = [3.025, 3.05, 3.075]
+    biases = [#0.0,
+              0.25
+              ]
+    repeat = 40
+    vss  = [3/4]
+    taus = [1/8]
+    merge = [True]
+
+    for _, L in enumerate(Ls):
+
+        for _, bias in enumerate(biases):
+
+            #tfin = L * 0.9
+            tfin = L * 7/8
+
+            for tswitch in [L/4]:
+
+                for k, U in enumerate(Us):
+                    
+                    dpt_single = {
+                        "U": [U],
+                        "L" : [L],
+                        "tfin" : [tfin],
+                        "TEdim": dims,
+                        "mixed": [True],
+                        "vs" : vss,
+                        "merge" : merge,
+                        "biasLR" : [bias],
+                        "n1init" : get_n1init(L, U, 'Feb12'),
+                        "tswitch" : [tswitch],
+                        "timestep": taus,
+                        "order" : [ "LSDSR", 'LRSDSLR', 'DLSR', 'DLRSLR'],
+                        "repeat" : [repeat],
+                        "searchmode" : ['iterative']
+                    }
+
+                    #print( dpt_single["U"], dpt_single["n1init"])
+                    gen_dpt_cluster(dpt_single)
+
+
+                    dpt_single = {
+                        "U": [U],
+                        "L" : [L],
+                        "tfin" : [tfin],
+                        "TEdim": dims,
+                        "mixed": [False],
+                        "vs" : vss,
+                        "merge" : merge,
+                        "biasLR" : [bias],
+                        "n1init" : get_n1init(L, U, 'Feb12'),
+                        "tswitch" : [tswitch],
+                        "timestep": taus,
+                        "order" : [ "LSDSR", 'DLSR'],
+                        "repeat" : [repeat],
+                        "searchmode" : ['iterative']
+                    }
+
+                    #print( dpt_single["U"], dpt_single["n1init"])
+                    gen_dpt_cluster(dpt_single)
+
+
 
 
 if __name__ == '__main__':
@@ -544,7 +611,7 @@ if __name__ == '__main__':
     #DPT_check()
     #DPT_yastn_comp()
     #DPT_yastn()
-    DPT_yastn_test()
+    DPT_bias_test()
     #changerepeat()
     #DPT_yastn_binary()
     #DPT_yastn_test()

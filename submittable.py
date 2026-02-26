@@ -62,15 +62,13 @@ def init_occupations(mapping, NW, NS):
     return occ
 
 
-def initial_state(NW, NS, U, muL, muR, vS0, alpha, mapping, order, merge, sym, D_total, curpath = '', muDs=[0, 10000], max2 = 4, max1 = 256, **config_kwargs):
+def initial_state(NW, NS, U, muL, muR, vS0, alpha, mapping, order, merge, sym, D_total, curpath = '', muDs=[0, 10000], max2 = 4, max1 = 256, sites = [], **config_kwargs):
 
     if os.path.isfile( f'{curpath}init.npy'):
         psi = load_psi(f'{curpath}init.npy', sym, message = "loading init", **config_kwargs)
         energy = np.loadtxt(f'{curpath}initenergy' )
         return psi, energy
     
-
-    sites = order_sites(mapping, order, NW, NS)
     init_occ = init_occupations(mapping, NW, NS)
     #pprint(sites)
     with open(f'{curpath}sites', 'w') as f:
@@ -83,9 +81,12 @@ def initial_state(NW, NS, U, muL, muR, vS0, alpha, mapping, order, merge, sym, D
     else:
         raise ValueError("Only sym = 'U1' or 'Z2' suported.")
 
-    H0, s2i, i2s = Hamiltonian(mapping)(NW, NS, muL, muR, muDs, vS0, U * (2 * alpha - 1), sym=sym, order=sites, **config_kwargs)
+    H0, s2i, i2s, M = Hamiltonian(mapping)(NW, NS, muL, muR, muDs, vS0, U * (2 * alpha - 1), sym=sym, order=sites, **config_kwargs)
     qI, qc, qcp, qn, dx, dn1, dn2, dI, m12, m21 = local_operators(sym=sym, **config_kwargs)
 
+
+    with open(f'{curpath}HamInit', 'w') as f:
+        np.savetxt(f, M, fmt = '%s')
     
     psi = mps.random_mps(H0, n=n_profile, D_total=D_total, sigma=2, distribution='normal')
 
@@ -132,16 +133,17 @@ def initial_state(NW, NS, U, muL, muR, vS0, alpha, mapping, order, merge, sym, D
     return psi, info.energy
 
 
-def run_evolution(psi, NW, NS, U, muL, muR, vS0, vS1, mapping, order, merge, sym, D_total, tswitch, tfin, dt, lasttime = 0, muDs=[0, 0], curpath = '', verbose=0, tdvptol = 1e-8, **config_kwargs):
+def run_evolution(psi, NW, NS, U, muL, muR, vS0, vS1, mapping, order, merge, sym, D_total, tswitch, tfin, dt, lasttime = 0, 
+                  muDs=[0, 0], curpath = '', verbose=0, tdvptol = 1e-8, sites = [], **config_kwargs):
 
-    sites = order_sites(mapping, order, NW, NS=4)
+    
     #pprint(sites)
     # statistics
     total = 0
     cnt = 0
 
-    H1, s2i, i2s = Hamiltonian(mapping)(NW, NS, muL, muR, muDs, vS0, U, sym=sym, order=sites)
-    H2, s2i, i2s = Hamiltonian(mapping)(NW, NS, muL, muR, muDs, vS1, U, sym=sym, order=sites)
+    H1, s2i, i2s, M1 = Hamiltonian(mapping)(NW, NS, muL, muR, muDs, vS0, U, sym=sym, order=sites)
+    H2, s2i, i2s, M2 = Hamiltonian(mapping)(NW, NS, muL, muR, muDs, vS1, U, sym=sym, order=sites)
     qI, qc, qcp, qn, dx, dn1, dn2, dI, m12, m21 = local_operators(sym=sym, **config_kwargs)
 
     On1 = merge_sites(op1site(dn1, 'D1', s2i, qI, dI), s2i, merge)
@@ -151,6 +153,12 @@ def run_evolution(psi, NW, NS, U, muL, muR, vS0, vS1, mapping, order, merge, sym
 
     H1 = merge_sites(H1, s2i, merge)
     H2 = merge_sites(H2, s2i, merge)
+
+    with open(f'{curpath}HamT1', 'w') as f:
+        np.savetxt(f, M1, fmt = '%s')
+
+    with open(f'{curpath}HamT2', 'w') as f:
+        np.savetxt(f, M2, fmt = '%s')
 
     opts_svd = {"D_total": D_total, 'tol': tdvptol}
     fprint("Running time evolution ... ")
@@ -183,7 +191,7 @@ def run_evolution(psi, NW, NS, U, muL, muR, vS0, vS1, mapping, order, merge, sym
             ent = psi.get_entropy()
 
             current1 = get_current(psi, s2i, qc, qcp, qI, dI, merge, method = 'op2site')
-            current2 = get_current(psi, s2i, qc, qcp, qI, dI, merge, method = 'inner')
+            #current2 = get_current(psi, s2i, qc, qcp, qI, dI, merge, method = 'inner')
 
             #current = get_current()
 
@@ -209,8 +217,8 @@ def run_evolution(psi, NW, NS, U, muL, muR, vS0, vS1, mapping, order, merge, sym
             with open(f'{curpath}current1', 'a') as f:
                 np.savetxt( f, [current1])
 
-            with open(f'{curpath}current2', 'a') as f:
-                np.savetxt( f, [current2])
+            # with open(f'{curpath}current2', 'a') as f:
+            #     np.savetxt( f, [current2])
 
             with open(f'{curpath}occs', 'a') as f:
                 np.savetxt( f, [occs], fmt = '%.4g')
@@ -274,6 +282,7 @@ def singlerun(para, config_kwargs):
         if os.path.isfile( f'{curpath}times'):
 
             lasttime = np.loadtxt( f'{curpath}times')[-1]
+            sites = np.loadtxt( f'{curpath}sites', dtype = 'str')
 
             # finish!
             if lasttime == tfin:
@@ -293,14 +302,16 @@ def singlerun(para, config_kwargs):
         # no time file, starting new!
         else:
             fprint("Starting new")
+            sites = order_sites(mapping, order, L, NS=NS, muL = muL, muR = muR)
 
-            psi0 , _ = initial_state(L, NS, U, muL, muR, 0, alpha, mapping, order, merge, sym, D, curpath=curpath, max1 = max1, max2 = max2, **config_kwargs)
+            psi0 , _ = initial_state(L, NS, U, 0.0, 0.0, 0, alpha, mapping, order, merge, sym, D, curpath=curpath, max1 = max1, max2 = max2, sites = sites, **config_kwargs)
 
             fprint(psi0)
 
             lasttime = 0.0
 
-        run_evolution(psi0, L, NS, U, muL, muR, 0, vs, mapping, order, merge, sym, D, tswitch, tfin, dt, lasttime = lasttime, curpath = curpath, tdvptol= tdvptol, verbose=0, **config_kwargs)
+        run_evolution(psi0, L, NS, U, muL, muR, 0, vs, mapping, order, merge, sym, D, tswitch, tfin, dt, 
+                      lasttime = lasttime, curpath = curpath, tdvptol= tdvptol, verbose=0, sites = sites, **config_kwargs)
 
         n1 = np.loadtxt(f'{curpath}/n1')
         new = np.mean( n1[-8:])
