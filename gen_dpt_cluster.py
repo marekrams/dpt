@@ -418,6 +418,27 @@ def get_n1init(L, U, key, base = None, dim = None, mixed = None) :
         for key in data:
             if f'L{Lsub}' in key and f'U{Usub}' in key:
                 return [data[key] ]
+            
+
+    elif key == 'Mar3':
+
+        # we only have L64 data
+        Lsub = 64
+
+        if L == 16:
+            Usub = np.round(U - 0.3, decimals=1)
+        elif L == 32:
+            Usub = np.round(U - 0.1, decimals=1)
+
+        if Usub > 4.0:
+            return [0.7, 0.95]
+        
+        with open(f'../fittingdata/Feb17results.pkl', 'rb') as f: # Use 'rb' for read binary mode
+            data = pickle.load(f)
+        
+        for key in data:
+            if f'L{Lsub}' in key and f'U{Usub}' in key:
+                return [data[key] ]
 
 
     else:
@@ -529,14 +550,14 @@ def DPT_yastn_test():
 
 def DPT_bias_test():
 
-    Ls = [64]
+    Ls = [16, 32]
     dims = [128]
-    Us = np.round(np.arange(3.0, 4.1, 0.1), decimals=5)
+    Us = np.round(np.arange(3.5, 4.5, 0.05), decimals=5)
     #Us = [3.025, 3.05, 3.075]
     biases = [#0.0,
               0.25
               ]
-    repeat = 40
+    repeat = 80
     vss  = [3/4]
     taus = [1/8]
     merge = [True]
@@ -561,7 +582,7 @@ def DPT_bias_test():
                         "vs" : vss,
                         "merge" : merge,
                         "biasLR" : [bias],
-                        "n1init" : [0.55, 0.95],
+                        "n1init" : get_n1init(L, U, 'Mar3'),
                         "tswitch" : [tswitch],
                         "timestep": taus,
                         "order" : [ 'DLRSLR'],
