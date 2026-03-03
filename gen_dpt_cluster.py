@@ -419,6 +419,7 @@ def get_n1init(L, U, key, base = None, dim = None, mixed = None) :
             if f'L{Lsub}' in key and f'U{Usub}' in key:
                 return [data[key] ]
 
+
     else:
         raise ValueError("Unrecognized type")
 
@@ -530,7 +531,7 @@ def DPT_bias_test():
 
     Ls = [64]
     dims = [128]
-    Us = np.round(np.array([3.4, 3.6, 3.9]), decimals=5)
+    Us = np.round(np.arange(3.0, 4.1, 0.1), decimals=5)
     #Us = [3.025, 3.05, 3.075]
     biases = [#0.0,
               0.25
@@ -560,10 +561,10 @@ def DPT_bias_test():
                         "vs" : vss,
                         "merge" : merge,
                         "biasLR" : [bias],
-                        "n1init" : get_n1init(L, U, 'Feb12'),
+                        "n1init" : [0.55, 0.95],
                         "tswitch" : [tswitch],
                         "timestep": taus,
-                        "order" : [ "LSDSR", 'LRSDSLR', 'DLSR', 'DLRSLR'],
+                        "order" : [ 'DLRSLR'],
                         "repeat" : [repeat],
                         "searchmode" : ['iterative']
                     }
@@ -571,26 +572,6 @@ def DPT_bias_test():
                     #print( dpt_single["U"], dpt_single["n1init"])
                     gen_dpt_cluster(dpt_single)
 
-
-                    dpt_single = {
-                        "U": [U],
-                        "L" : [L],
-                        "tfin" : [tfin],
-                        "TEdim": dims,
-                        "mixed": [False],
-                        "vs" : vss,
-                        "merge" : merge,
-                        "biasLR" : [bias],
-                        "n1init" : get_n1init(L, U, 'Feb12'),
-                        "tswitch" : [tswitch],
-                        "timestep": taus,
-                        "order" : [ "LSDSR", 'DLSR'],
-                        "repeat" : [repeat],
-                        "searchmode" : ['iterative']
-                    }
-
-                    #print( dpt_single["U"], dpt_single["n1init"])
-                    gen_dpt_cluster(dpt_single)
 
 
 
