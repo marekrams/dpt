@@ -170,7 +170,7 @@ def run_evolution(psi, NW, NS, U, muL, muR, vS0, vS1, mapping, order, merge, sym
         times = times[ times >= lasttime]
 
         if len(times) == 0:
-            fprint("Skipping stage 1")
+            fprint(f"last time = {lasttime}, Skipping stage 1")
             continue
 
         start_time = time.time()
@@ -190,7 +190,7 @@ def run_evolution(psi, NW, NS, U, muL, muR, vS0, vS1, mapping, order, merge, sym
 
             ent = psi.get_entropy()
 
-            current1 = get_current(psi, s2i, qc, qcp, qI, dI, merge, method = 'op2site')
+            current1 = get_current(psi, s2i, qc, qcp, qI, dI, merge)
             #current2 = get_current(psi, s2i, qc, qcp, qI, dI, merge, method = 'inner')
 
             #current = get_current()
