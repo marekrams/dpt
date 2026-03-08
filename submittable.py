@@ -110,6 +110,12 @@ def initial_state(NW, NS, U, muL, muR, vS0, alpha, mapping, order, merge, sym, D
         info = mps.dmrg_(psi, H0, method='1site', max_sweeps=max1, Schmidt_tol=1e-12)
         fprint(info)
 
+
+    On1 = merge_sites(op1site(dn1, 'D1', s2i, qI, dI), s2i, merge)
+    On2 = merge_sites(op1site(dn2, 'D1', s2i, qI, dI), s2i, merge)
+
+    fprint("Before: n1 = ", mps.vdot(psi, On1, psi), "n2 = ", mps.vdot(psi, On2, psi))
+
     O = (np.sqrt(alpha) * dn1 + np.sqrt(1 - alpha) * m12)
     O = op1site(O, 'D1', s2i, qI, dI)
     O = merge_sites(O, s2i, merge)
@@ -117,9 +123,6 @@ def initial_state(NW, NS, U, muL, muR, vS0, alpha, mapping, order, merge, sym, D
     psi = O @ psi
     psi.canonize_(to='last')
     psi.canonize_(to='first')
-
-    On1 = merge_sites(op1site(dn1, 'D1', s2i, qI, dI), s2i, merge)
-    On2 = merge_sites(op1site(dn2, 'D1', s2i, qI, dI), s2i, merge)
 
     fprint("Done. n1 = ", mps.vdot(psi, On1, psi), "n2 = ", mps.vdot(psi, On2, psi))
 
@@ -287,7 +290,7 @@ def singlerun(para, config_kwargs):
             # finish!
             if lasttime == tfin:
                 fprint( f"iter {i} exists, skip!")
-                alpha = np.mean(np.loadtxt( f'{curpath}n1')[-16:])
+                alpha = np.mean(np.loadtxt( f'{curpath}n1')[-8:])
                 fprint( f"current alpha = {alpha}")
                 continue
             
@@ -324,7 +327,7 @@ def singlerun(para, config_kwargs):
         alpha = new
 
 
-def singlerun_binary_search(para):
+def singlerun_binary_search(para, config_kwargs):
 
 
     L = int(para['L'])
@@ -332,10 +335,11 @@ def singlerun_binary_search(para):
     U = float(para['U'])
     muL = float(para['biasLR'])
     muR = -float(para['biasLR'])
-    lo = float(para['lo'])
-    hi = float(para['hi'])
+    #alpha = float(para['n1init'])
+    lo = float(para["lo"])
+    hi = float(para["hi"])
     mixed = bool(para['mixed'])
-    merge = True
+    merge = bool(para["merge"])
     mapping = 'mixed' if mixed else 'position'
     sym = 'U1'
     order = para['order']
@@ -347,10 +351,10 @@ def singlerun_binary_search(para):
     repeat = int(para['repeat'])
     max2 = int(para["max2"])
     max1 = int(para["max1"])
+    finaltol = float(para['finaltol'])
+
 
     tdvptol = 1e-6
-
-
     for i in range(repeat):
 
         fprint(f"repeat: {i}")
@@ -363,63 +367,66 @@ def singlerun_binary_search(para):
         if os.path.isfile( f'{curpath}times'):
 
             lasttime = np.loadtxt( f'{curpath}times')[-1]
+            sites = np.loadtxt( f'{curpath}sites', dtype = 'str')
 
             # finish!
             if lasttime == tfin:
                 fprint( f"iter {i} exists, skip!")
-                lo, hi = np.loadtxt( f'{curpath}lohi')
+                #alpha = np.mean(np.loadtxt( f'{curpath}n1')[-8:])
+                lo = np.loadtxt( f'{curpath}lo')
+                hi = np.loadtxt( f'{curpath}hi')
                 fprint( f"current lo = {lo}, hi = {hi}")
                 continue
             
             # we continue
             else:
 
-                if i > 0:
-                    lastpath = f'{getcwd()}/results_repeat{i - 1}/'
-                    lo, hi = np.loadtxt( f'{lastpath}lohi')
-
-                alpha = (lo + hi) / 2
-                psi0 = load_psi(f'{curpath}TDVPlast.npy', sym, message="Loading last")
+                try:
+                    psi0 = load_psi(f'{curpath}TDVPlast.npy', sym, message="Loading last", **config_kwargs)
+                except:
+                    psi0 = load_psi(f'{curpath}TDVPlastback.npy', sym, message="Loading last backup", **config_kwargs)
             
         # no time file, starting new!
         else:
             fprint("Starting new")
+
             alpha = (lo + hi) / 2
-            psi0 , _ = initial_state(L, NS, U, muL, muR, 0, alpha, mapping, order, merge, sym, D, curpath=curpath, max1 = max1, max2 = max2)
+            sites = order_sites(mapping, order, L, NS=NS, muL = muL, muR = muR)
+
+            psi0 , _ = initial_state(L, NS, U, 0.0, 0.0, 0, alpha, mapping, order, merge, sym, D, curpath=curpath, max1 = max1, max2 = max2, sites = sites, **config_kwargs)
 
             fprint(psi0)
 
             lasttime = 0.0
+        
+        alpha = (lo + hi) / 2
 
-            
-
-        #fprint(psi0.save_to_dict())
-        run_evolution(psi0, L, NS, U, muL, muR, 0, vs, mapping, order, merge, sym, D, tswitch, tfin, dt, lasttime = lasttime, curpath = curpath, tdvptol= tdvptol, verbose=0)
+        run_evolution(psi0, L, NS, U, muL, muR, 0, vs, mapping, order, merge, sym, D, tswitch, tfin, dt, 
+                      lasttime = lasttime, curpath = curpath, tdvptol= tdvptol, verbose=0, sites = sites, **config_kwargs)
 
         n1 = np.loadtxt(f'{curpath}/n1')
         new = np.mean( n1[-8:])
 
-        if np.abs(new - alpha) < 1e-5:
+        fprint("new n1 last: ", new)
+
+        if np.abs(new - alpha) < finaltol:
             break
-
         
-        # ambiguous situation, we shrink the L, H range instead
-        # if np.abs(new - alpha) < 5e-3:
-
-        #     gap = np.abs(new - alpha)
-        #     mid = (new + alpha) / 2
-
-        # else:
-        # if we have up trending:
-        if new > alpha:
-            lo = alpha
+        # determine condition for choosing interval
         
+        # choose lower
+        if new < alpha :
+            lo = lo
+            hi = new
+
+        # choose higher
         else:
-            hi = alpha
+            lo = new
+            hi = hi
 
-        
-        np.savetxt( f'{curpath}/lohi', [lo, hi])
-        fprint(f"after simulation, lo = {lo}, hi = {hi}")
+        np.savetxt( f'{curpath}lo', [lo])
+        np.savetxt( f'{curpath}hi', [hi])
+
 
 
 
