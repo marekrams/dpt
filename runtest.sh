@@ -1,12 +1,9 @@
 #! /bin/zsh
 
+#TH=4
 TH=1
-#TH=1
 
-export OMP_NUM_THREADS=$TH
-export MKL_NUM_THREADS=$TH
-export OPENBLAS_NUM_THREADS=$TH
-export BLIS_NUM_THREADS=$TH
-export VECLIB_MAXIMUM_THREADS=$TH
-export NUMEXPR_NUM_THREADS=$TH 
-python submittable.py
+c=$(pwd)
+tmux new-session -d -s "test dpt" -c $c \
+"OMP_NUM_THREADS=$TH MKL_NUM_THREADS=$TH OPENBLAS_NUM_THREADS=$TH BLIS_NUM_THREADS=$TH VECLIB_MAXIMUM_THREADS=$TH NUMEXPR_NUM_THREADS=$TH \
+perf stat -e instructions,cycles,stalled-cycles-frontend,stalled-cycles-backend,cache-misses python submittable.py &> log"
