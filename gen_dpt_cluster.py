@@ -451,13 +451,13 @@ def U_determine(L, bias):
     if bias == 0:
 
         Us = {
-            32 : np.arange(3.4, 3.9, 0.25),
-            64 : np.arange(3.3, 3.8, 0.25),
-            128: np.arange(3.3, 3.7, 0.25)
+            32 : np.arange(3.4, 3.9, 0.025),
+            64 : np.arange(3.3, 3.8, 0.025),
+            128: np.arange(3.3, 3.7, 0.025)
         }
 
 
-    return Us[L]
+    return np.round(Us[L], decimals = 5)
 
 # def DPT_bias_test():
 
