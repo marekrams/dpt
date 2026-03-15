@@ -12,6 +12,7 @@ import os
 #import cupy as cp
 
 from utils import *
+from threadpoolctl import threadpool_info
 
 import time
 from pprint import pprint
@@ -433,6 +434,9 @@ def singlerun_binary_search(para, config_kwargs):
 
 #singlerun()
 if __name__ == '__main__':
+
+    print(threadpool_info())
+    np.__config__.show()
 
     with open( getcwd() + '/dptpara.json', 'r') as io:
         para = json.load(io)
