@@ -179,7 +179,7 @@ def run_evolution(psi, NW, NS, U, muL, muR, vS0, vS1, mapping, order, merge, sym
 
         start_time = time.time()
         #fprint(times)
-        for step in mps.tdvp_(psi, H, times, method='2site', dt=dt, opts_svd=opts_svd, 
+        for step in mps.tdvp_(psi, H, times, method='12site', dt=dt, opts_svd=opts_svd, 
                               yield_initial=True if times[0] == 0 else False, 
                               subtract_E=True):
         
