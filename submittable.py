@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import yastn.tn.mps as mps
 import json
 from hamiltonians import local_operators, Hamiltonian_dpt_position, Hamiltonian_dpt_momentum, Hamiltonian_dpt_mixed
-from auxilliary import merge_sites, op1site, get_current
+from auxilliary import merge_sites, op1site, get_current, gpu_report
 from sites import L, S, D, R, order_sites
 from os import getcwd, mkdir
 import os
@@ -65,11 +65,14 @@ def init_occupations(mapping, NW, NS):
 
 def initial_state(NW, NS, U, muL, muR, vS0, alpha, mapping, order, merge, sym, D_total, curpath = '', muDs=[0, 10000], max2 = 4, max1 = 256, sites = [], **config_kwargs):
 
+    print("init config: ", config_kwargs)
+
     if os.path.isfile( f'{curpath}init.npy'):
         psi = load_psi(f'{curpath}init.npy', sym, message = "loading init", **config_kwargs)
         energy = np.loadtxt(f'{curpath}initenergy' )
         return psi, energy
     
+
     init_occ = init_occupations(mapping, NW, NS)
     #pprint(sites)
     with open(f'{curpath}sites', 'w') as f:
@@ -111,6 +114,7 @@ def initial_state(NW, NS, U, muL, muR, vS0, alpha, mapping, order, merge, sym, D
         info = mps.dmrg_(psi, H0, method='1site', max_sweeps=max1, Schmidt_tol=1e-12)
         fprint(info)
 
+    
 
     On1 = merge_sites(op1site(dn1, 'D1', s2i, qI, dI), s2i, merge)
     On2 = merge_sites(op1site(dn2, 'D1', s2i, qI, dI), s2i, merge)
@@ -141,13 +145,13 @@ def run_evolution(psi, NW, NS, U, muL, muR, vS0, vS1, mapping, order, merge, sym
                   muDs=[0, 0], curpath = '', verbose=0, tdvptol = 1e-8, sites = [], **config_kwargs):
 
     
-    #pprint(sites)
+    print("dynamics config: ", config_kwargs)
     # statistics
     total = 0
     cnt = 0
 
-    H1, s2i, i2s, M1 = Hamiltonian(mapping)(NW, NS, muL, muR, muDs, vS0, U, sym=sym, order=sites)
-    H2, s2i, i2s, M2 = Hamiltonian(mapping)(NW, NS, muL, muR, muDs, vS1, U, sym=sym, order=sites)
+    H1, s2i, i2s, M1 = Hamiltonian(mapping)(NW, NS, muL, muR, muDs, vS0, U, sym=sym, order=sites, **config_kwargs)
+    H2, s2i, i2s, M2 = Hamiltonian(mapping)(NW, NS, muL, muR, muDs, vS1, U, sym=sym, order=sites, **config_kwargs)
     qI, qc, qcp, qn, dx, dn1, dn2, dI, m12, m21 = local_operators(sym=sym, **config_kwargs)
 
     On1 = merge_sites(op1site(dn1, 'D1', s2i, qI, dI), s2i, merge)
@@ -166,6 +170,7 @@ def run_evolution(psi, NW, NS, U, muL, muR, vS0, vS1, mapping, order, merge, sym
 
     opts_svd = {"D_total": D_total, 'tol': tdvptol}
     fprint("Running time evolution ... ")
+
     for t0, t1, H in [(0, tswitch, H1), (tswitch, tfin, H2)]:
         times = np.linspace(t0, t1, int((t1 - t0) /dt) + 1)
         times = [t0, t0+dt/128, t0+dt/64, t0+dt/32, t0+dt/16, t0+dt/8, t0+dt/4, t0+dt/2] + list(times)[1:]
@@ -182,7 +187,11 @@ def run_evolution(psi, NW, NS, U, muL, muR, vS0, vS1, mapping, order, merge, sym
         for step in mps.tdvp_(psi, H, times, method='12site', dt=dt, opts_svd=opts_svd, 
                               yield_initial=True if times[0] == 0 else False, 
                               subtract_E=True):
-        
+
+
+            if config_kwargs['backend'] == 'torch' and cnt % 20 == 0:
+                gpu_report(f'step = {cnt}')
+                
             cnt += 1
             if verbose:
                 fprint(step)
@@ -194,7 +203,19 @@ def run_evolution(psi, NW, NS, U, muL, muR, vS0, vS1, mapping, order, merge, sym
 
             ent = psi.get_entropy()
 
-            current1 = get_current(psi, s2i, qc, qcp, qI, dI, merge)
+            if config_kwargs['backend'] != 'torch':
+                current1 = get_current(psi, s2i, qc, qcp, qI, dI, merge)
+
+                with open(f'{curpath}current1', 'a') as f:
+                    np.savetxt( f, [current1])
+
+            else:
+                ent = [ val.cpu() for val in ent]
+                occs = [ val.cpu() for val in occs]
+                n1 = n1.cpu()
+                m12 = m12.cpu()
+                
+
             #current2 = get_current(psi, s2i, qc, qcp, qI, dI, merge, method = 'inner')
 
             #current = get_current()
@@ -217,9 +238,6 @@ def run_evolution(psi, NW, NS, U, muL, muR, vS0, vS1, mapping, order, merge, sym
 
             with open(f'{curpath}times', 'a') as f:
                 np.savetxt( f, [step.tf])
-
-            with open(f'{curpath}current1', 'a') as f:
-                np.savetxt( f, [current1])
 
             # with open(f'{curpath}current2', 'a') as f:
             #     np.savetxt( f, [current2])
@@ -396,7 +414,8 @@ def singlerun_binary_search(para, config_kwargs):
 
             psi0 , _ = initial_state(L, NS, U, 0.0, 0.0, 0, alpha, mapping, order, merge, sym, D, curpath=curpath, max1 = max1, max2 = max2, sites = sites, **config_kwargs)
 
-            fprint(psi0)
+            if config_kwargs['backend'] == 'torch':
+                gpu_report('DMRG')
 
             lasttime = 0.0
         
@@ -435,8 +454,8 @@ def singlerun_binary_search(para, config_kwargs):
 #singlerun()
 if __name__ == '__main__':
 
-    print(threadpool_info())
-    np.__config__.show()
+    #print(threadpool_info())
+    #np.__config__.show()
 
     with open( getcwd() + '/dptpara.json', 'r') as io:
         para = json.load(io)
@@ -450,13 +469,13 @@ if __name__ == '__main__':
         if gpu == True:
             pprint("USING GPU")
             #np = cp
-            config_kwargs = {"backend": "torch"}
+            config_kwargs = {"backend": "torch", "default_device" : "cuda"}
         
         else:
             pprint("USING CPU")
             config_kwargs = {"backend": "np"}
     except:
-
+        pprint("USING CPU")
         config_kwargs = {"backend": "np"}
 
 

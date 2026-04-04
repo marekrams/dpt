@@ -1,7 +1,7 @@
 import numpy as np
 import yastn
 import yastn.tn.mps as mps
-
+import torch
 
 def op1site(op, site, s2i, qI, dI):
     ii = s2i[site]
@@ -70,3 +70,23 @@ def get_current(psi,  s2i, qc, qcp, qI, dI, merge):
     current = 2 * mps.vdot(psi, op, psi).imag
     
     return current
+
+
+
+def gpu_report(tag=""):
+    torch.cuda.synchronize()
+    alloc = torch.cuda.memory_allocated() / 1024**3
+    reserv = torch.cuda.memory_reserved() / 1024**3
+    peak = torch.cuda.max_memory_allocated() / 1024**3
+    used = torch.cuda.device_memory_used() / 1024**3
+    free, total = torch.cuda.mem_get_info()
+    free /= 1024**3
+    total /= 1024**3
+    print(
+        f"{tag:>16} | "
+        f"alloc={alloc:7.3f} GB | "
+        f"reserved={reserv:7.3f} GB | "
+        f"peak={peak:7.3f} GB | "
+        f"device_used={used:7.3f} GB | "
+        f"free={free:7.3f}/{total:7.3f} GB"
+    )
