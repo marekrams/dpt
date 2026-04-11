@@ -221,6 +221,8 @@ def direct_load(f):
 
 
 
+
+
 def get_n1init(L, U, key, base = None, dim = None, mixed = None) :
 
     # Guesses for Nov 3 test
@@ -459,6 +461,44 @@ def U_determine(L, bias):
 
     return np.round(Us[L], decimals = 5)
 
+
+def bias_determine(L):
+
+    def count_num(L, bias):
+        
+        k = np.arange(1, L + 1)
+        r = 2  * np.cos(np.pi * k / (L + 1)) 
+        w = np.concat( (r + bias, r - bias))
+        mids = w[ (w >= -bias) & (w <= bias)]
+        N = len(mids)
+
+        return N
+    
+    def search(L, lo, hi):
+
+        mid = (lo + hi) / 2
+        N = count_num(L, mid)
+
+        if N == Nref:
+            return mid
+
+        if N > Nref:
+            return search(L, lo, mid)
+        
+        else:
+            return search(L, mid, hi)
+        
+        
+
+    # baseline : L32 , bias = 0.25
+    Nref = count_num(32, 0.25)
+    bnew = search(L, 0, 2)
+    return bnew
+
+    
+
+
+
 # def DPT_bias_test():
 
 #     Ls = [16, 32]
@@ -507,26 +547,29 @@ def U_determine(L, bias):
 
 def DPT_bias_bs():
 
-    Ls = [32, 64, 128]
-    dims = [128, 256]
+    Ls = [32, 64, 128, 256]
+    dims = [256]
     
-    #Us = [3.025, 3.05, 3.075]
-    biases = [#0.0,
-              0.25
-              ]
-    repeat = 80
+    Us = [3.0, 4.0]
+
+    repeat = 1
     vss  = [3/4]
     taus = [1/8]
     merge = [True]
 
     for _, L in enumerate(Ls):
 
+        # biases = [#0.0,
+        #       0.25
+        #       ]
+
+        biases = ([bias_determine(L)] if L != 32 else []) + [0.75]
         for _, bias in enumerate(biases):
 
             #tfin = L * 0.9
             tfin = L * 7/8
 
-            Us = U_determine(L, bias)
+            #Us = U_determine(L, bias)
 
             for tswitch in [tfin/4]:
 
@@ -576,6 +619,7 @@ if __name__ == '__main__':
     #DPT_yastn()
     #DPT_bias_test()
     DPT_bias_bs()
+    #bias_determine()
     #changerepeat()
     #DPT_yastn_binary()
     #DPT_yastn_test()

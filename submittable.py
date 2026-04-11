@@ -394,6 +394,11 @@ def singlerun_binary_search(para, config_kwargs):
                 #alpha = np.mean(np.loadtxt( f'{curpath}n1')[-8:])
                 lo = np.loadtxt( f'{curpath}lo')
                 hi = np.loadtxt( f'{curpath}hi')
+                points = [lo, hi]
+
+                lo = min(points)
+                hi = max(points)
+                
                 fprint( f"current lo = {lo}, hi = {hi}")
                 continue
             
@@ -436,13 +441,16 @@ def singlerun_binary_search(para, config_kwargs):
         
         # choose lower
         if new < alpha :
-            lo = lo
-            hi = new
+
+            points = [lo, new]
+            lo = min(points)
+            hi = max(points)
 
         # choose higher
         else:
-            lo = new
-            hi = hi
+            points = [new, hi]
+            lo = min(points)
+            hi = max(points)
 
         np.savetxt( f'{curpath}lo', [lo])
         np.savetxt( f'{curpath}hi', [hi])
