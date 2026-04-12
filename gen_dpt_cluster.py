@@ -442,13 +442,13 @@ def get_n1init(L, U, key, base = None, dim = None, mixed = None) :
         for key in data:
             if f'L{Lsub}' in key and f'U{Usub}' in key:
                 return [data[key] ]
-
+            
 
     else:
         raise ValueError("Unrecognized type")
 
 
-def U_determine(L, bias):
+def U_determine(L, bias, tag):
 
     if bias == 0:
 
@@ -457,6 +457,9 @@ def U_determine(L, bias):
             64 : np.arange(3.3, 3.8, 0.025),
             128: np.arange(3.3, 3.7, 0.025)
         }
+
+    elif tag == 'prodApr9testbias':
+        return np.round(np.arange(3.0, 7.0), decimals = 5)
 
 
     return np.round(Us[L], decimals = 5)
@@ -547,31 +550,32 @@ def bias_determine(L):
 
 def DPT_bias_bs():
 
-    Ls = [32, 64, 128, 256]
-    dims = [256]
+    Ls = [32, 48, 64, 96, 128]
+    dims = [64, 128, 256]
     
-    Us = [3.0, 4.0]
-
-    repeat = 1
+    repeat = 40
     vss  = [3/4]
     taus = [1/8]
     merge = [True]
 
     for _, L in enumerate(Ls):
 
-        # biases = [#0.0,
-        #       0.25
-        #       ]
-
-        biases = ([bias_determine(L)] if L != 32 else []) + [0.75]
+        biases = [#0.0,
+              #0.25,
+              0.5,
+              0.75
+              ]
+        
+        
         for _, bias in enumerate(biases):
 
+            Us = U_determine(L, bias, 'prodApr9testbias')
             #tfin = L * 0.9
             tfin = L * 7/8
 
             #Us = U_determine(L, bias)
 
-            for tswitch in [tfin/4]:
+            for tswitch in [tfin/4, tfin/2]:
 
                 for k, U in enumerate(Us):
                     
@@ -592,7 +596,7 @@ def DPT_bias_bs():
                         "order" : [ 'DLRSLR'],
                         "repeat" : [repeat],
                         "searchmode" : ['binarysearch'],
-                        "finaltol" : [1e-5]
+                        "finaltol" : [1e-3, 1e-5]
                     }
 
                     #print( dpt_single["U"], dpt_single["n1init"])
