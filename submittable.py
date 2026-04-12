@@ -13,7 +13,7 @@ import os
 
 from utils import *
 from threadpoolctl import threadpool_info
-
+from copy import deepcopy
 import time
 from pprint import pprint
 
@@ -289,6 +289,7 @@ def singlerun(para, config_kwargs):
     repeat = int(para['repeat'])
     max2 = int(para["max2"])
     max1 = int(para["max1"])
+    finaltol = float(para['finaltol'])
 
 
     tdvptol = 1e-6
@@ -296,7 +297,7 @@ def singlerun(para, config_kwargs):
 
         fprint(f"repeat: {i}")
 
-        curpath = f'{getcwd()}/results_repeat{i}/'
+        curpath = f'{getcwd()}/iter_repeat{i}/'
 
         if not os.path.isdir(curpath):
             mkdir(curpath)
@@ -328,7 +329,8 @@ def singlerun(para, config_kwargs):
 
             psi0 , _ = initial_state(L, NS, U, 0.0, 0.0, 0, alpha, mapping, order, merge, sym, D, curpath=curpath, max1 = max1, max2 = max2, sites = sites, **config_kwargs)
 
-            fprint(psi0)
+            if config_kwargs['backend'] == 'torch':
+                gpu_report('DMRG')
 
             lasttime = 0.0
 
@@ -340,10 +342,12 @@ def singlerun(para, config_kwargs):
 
         fprint("new n1 last: ", new)
 
-        if np.abs(new - alpha) < 1e-5:
-            break
+        if np.abs(new - alpha) < finaltol:
+            return True, new - alpha
 
         alpha = new
+
+    return False, new - alpha
 
 
 def singlerun_binary_search(para, config_kwargs):
@@ -378,7 +382,7 @@ def singlerun_binary_search(para, config_kwargs):
 
         fprint(f"repeat: {i}")
 
-        curpath = f'{getcwd()}/results_repeat{i}/'
+        curpath = f'{getcwd()}/bs_repeat{i}/'
 
         if not os.path.isdir(curpath):
             mkdir(curpath)
@@ -435,7 +439,8 @@ def singlerun_binary_search(para, config_kwargs):
         fprint("new n1 last: ", new)
 
         if np.abs(new - alpha) < finaltol:
-            break
+            fprint("final tol ", np.abs(new - alpha))
+            return True
         
         # determine condition for choosing interval
         
@@ -455,7 +460,7 @@ def singlerun_binary_search(para, config_kwargs):
         np.savetxt( f'{curpath}lo', [lo])
         np.savetxt( f'{curpath}hi', [hi])
 
-
+    return False
 
 
 
@@ -494,7 +499,22 @@ if __name__ == '__main__':
 
     elif mode == 'binarysearch':
         fprint("BINARY SEARCH")
-        singlerun_binary_search(para, config_kwargs)
+
+        temppara = deepcopy(para)
+        temppara["repeat"] = 1
+        temppara["n1init"] = 0.501
+        temppara['finaltol'] = 1e-3
+        check, val = singlerun(temppara, config_kwargs)
+
+        #print(val)
+
+        if check and val < 0:
+            fprint("tol reached")
+
+        else:
+            fprint("tol not reached: bs")
+            singlerun_binary_search(para, config_kwargs)
+            
         
     else:
         raise ValueError("not recognized searchmode")

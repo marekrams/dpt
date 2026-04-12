@@ -7,6 +7,7 @@
 out/*
 test/*
 results*/*
+*repeat*/*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
