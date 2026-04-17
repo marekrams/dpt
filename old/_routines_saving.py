@@ -43,7 +43,7 @@ def generate_Hamiltonian(param):
                      sym=param["sym"])
 
     data = {"param": param_hamiltonian(param),
-            "H": H.save_to_dict(),
+            "H": H.save_save_to_dict(),
             "s2i": s2i,
             "i2s": i2s}
 
@@ -99,7 +99,7 @@ def generate_gs(param, reset=False):
                              max_sweeps=param["max_sweeps1"], Schmidt_tol=param["Schmidt_tol"])
             print(info.energy)
 
-            psi0 = psi.save_to_dict()
+            psi0 = psi.save_save_to_dict()
             entropy = psi.get_entropy()
             occ = mps.measure_1site(psi, Ons, psi)
             occ = {i2s[k]: v for k, v in occ.items()}

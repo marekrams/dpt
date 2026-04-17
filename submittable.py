@@ -131,7 +131,7 @@ def initial_state(NW, NS, U, muL, muR, vS0, alpha, mapping, order, merge, sym, D
 
     fprint("Done. n1 = ", mps.vdot(psi, On1, psi), "n2 = ", mps.vdot(psi, On2, psi))
 
-    psidata = psi.to_dict()
+    psidata = psi.save_to_dict()
     with open(f'{curpath}init.npy', 'wb') as f:
         np.save(f, psidata, allow_pickle=True)
     
@@ -228,7 +228,7 @@ def run_evolution(psi, NW, NS, U, muL, muR, vS0, vS1, mapping, order, merge, sym
             total += end_time - start_time
             fprint(f"Rolling average TDVP: {total/cnt}")
 
-            psidata = psi.to_dict()
+            psidata = psi.save_to_dict()
             #fprint(psidata)
             with open(f'{curpath}TDVPlast.npy', 'wb') as f:
                 np.save(f, psidata, allow_pickle=True)
@@ -312,6 +312,10 @@ def singlerun(para, config_kwargs):
                 fprint( f"iter {i} exists, skip!")
                 alpha = np.mean(np.loadtxt( f'{curpath}n1')[-8:])
                 fprint( f"current alpha = {alpha}")
+
+                if np.abs(float(para['n1init']) - alpha) < finaltol:
+                    return True, new - alpha
+                
                 continue
             
             # we continue
