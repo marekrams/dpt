@@ -459,7 +459,8 @@ def U_determine(L, bias, tag):
         }
 
     elif tag == 'prodApr9testbias':
-        return np.round(np.arange(2.0, 7.0), decimals = 5)
+        #return np.round(np.arange(3.0, ), decimals = 5)
+        return [3.0, 3.5, 4.0, 4.5, 5.0, 5.5]
 
 
     return np.round(Us[L], decimals = 5)
@@ -550,8 +551,8 @@ def bias_determine(L):
 
 def DPT_bias_bs():
 
-    Ls = [32, 48, 64, 96, 128]
-    dims = [64, 128, 256]
+    Ls = [32, 64, 128]
+    dims = [128, 256]
     
     repeat = 40
     vss  = [1/8, 3/4]
@@ -561,22 +562,25 @@ def DPT_bias_bs():
     for _, L in enumerate(Ls):
 
         biases = [#0.0,
-              #0.25,
-              0.5,
-              0.75
+              0.25,
+              #0.5,
+              0.75,
+              1.5
               ]
         
         
         for _, bias in enumerate(biases):
 
             Us = U_determine(L, bias, 'prodApr9testbias')
+
+            print(Us)
             #tfin = L * 0.9
             tfin = L * 7/8
 
             #Us = U_determine(L, bias)
 
             for tswitch in [tfin/4, 
-                            #tfin/2
+                            tfin/2
                             ]:
 
                 for k, U in enumerate(Us):
