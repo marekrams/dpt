@@ -500,20 +500,22 @@ if __name__ == '__main__':
     elif mode == 'binarysearch':
         fprint("BINARY SEARCH")
 
-        temppara = deepcopy(para)
-        temppara["repeat"] = 1
-        temppara["n1init"] = 0.501
-        temppara['finaltol'] = 1e-3
-        check, val = singlerun(temppara, config_kwargs)
+        # temppara = deepcopy(para)
+        # temppara["repeat"] = 1
+        # temppara["n1init"] = 0.501
+        # temppara['finaltol'] = 1e-3
+        # check, val = singlerun(temppara, config_kwargs)
 
-        #print(val)
+        # #print(val)
 
-        if check and val < 0:
-            fprint("tol reached")
+        # if check and val < 0:
+        #     fprint("tol reached")
 
-        else:
-            fprint("tol not reached: bs")
-            singlerun_binary_search(para, config_kwargs)
+        # else:
+        #     fprint("tol not reached: bs")
+        #     singlerun_binary_search(para, config_kwargs)
+
+        singlerun_binary_search(para, config_kwargs)
             
         
     else:
