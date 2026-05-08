@@ -24,7 +24,7 @@ def  local_operators(sym='U1', **config_kwargs):
     return qI, qc, qcp, qn, dx, dn1, dn2, dI, m12, m21
 
 
-def Hamiltonian_dpt_position(NW, NS, muL, muR, muDs, vS, U, w0=1, order='DLSR', sym='U1', **config_kwargs):
+def Hamiltonian_dpt_position(NW, NS, muL, muR, muDs, vS, U, w0=1, order='DLSR', sym='U1', Hdebug = False, **config_kwargs):
     """ generate MPO for DPT in position basis. first dot is interacting with 4 sites """
     #
     qI, qc, qcp, qn, dx, dn1, dn2, dI, m12, m21 = local_operators(sym=sym, **config_kwargs)
@@ -87,12 +87,16 @@ def Hamiltonian_dpt_position(NW, NS, muL, muR, muDs, vS, U, w0=1, order='DLSR', 
 
     Hterms = [mps.Hterm(v, tuple(s2i[x] for x in p), o) for v, p, o in terms]
 
-    M = draw_ham(terms, s2i, i2s)
+    if Hdebug:
+        M = draw_ham(terms, s2i, i2s)
+    else:
+        M = None
+
     H = mps.generate_mpo(II, Hterms)
-    return H, s2i, i2s, M
+    return H, M
 
 
-def Hamiltonian_dpt_momentum(NW, NS, muL, muR, muDs, vS, U, w0=1, order='DLR', sym='U1', **config_kwargs):
+def Hamiltonian_dpt_momentum(NW, NS, muL, muR, muDs, vS, U, w0=1, order='DLR', sym='U1', Hdebug = False, **config_kwargs):
     """ generate mpo for dpt model in mixed basis """
     #
     qI, qc, qcp, qn, dx, dn1, dn2, dI, m12, m21 = local_operators(sym=sym, **config_kwargs)
@@ -144,14 +148,17 @@ def Hamiltonian_dpt_momentum(NW, NS, muL, muR, muDs, vS, U, w0=1, order='DLR', s
 
     Hterms = [mps.Hterm(v, tuple(s2i[x] for x in p), o) for v, p, o in terms]
 
-    M = draw_ham(terms, s2i, i2s)
+    if Hdebug:
+        M = draw_ham(terms, s2i, i2s)
+    else:
+        M = None
 
     H = mps.generate_mpo(II, Hterms)
-    return H, s2i, i2s, M
+    return H, M
 
 
 
-def Hamiltonian_dpt_mixed(NW, NS, muL, muR, muDs, vS, U, w0=1, order = [], sym='U1', **config_kwargs):
+def Hamiltonian_dpt_mixed(NW, NS, muL, muR, muDs, vS, U, w0=1, order = [], sym='U1', Hdebug = False, **config_kwargs):
     """ generate mpo for dpt model in mixed basis """
 
     qI, qc, qcp, qn, dx, dn1, dn2, dI, m12, m21 = local_operators(sym=sym, **config_kwargs)
@@ -223,10 +230,13 @@ def Hamiltonian_dpt_mixed(NW, NS, muL, muR, muDs, vS, U, w0=1, order = [], sym='
         terms.append((U, (D(1), S(k)), [dn1 - dI / 2, qn - qI / 2]))
 
     Hterms = [mps.Hterm(v, tuple(s2i[x] for x in p), o) for v, p, o in terms]
-    M = draw_ham(terms, s2i, i2s)
+    if Hdebug:
+        M = draw_ham(terms, s2i, i2s)
+    else:
+        M = None
 
     H = mps.generate_mpo(II, Hterms)
-    return H, s2i, i2s, M
+    return H, M
 
 
 

@@ -676,6 +676,98 @@ def bench_fig1():
                     gen_dpt_cluster(dpt_single)
 
 
+
+def bench_basis():
+
+    Ls = [128]
+    dims = [256]
+    
+    repeat = 1
+    vss  = [3/4]
+    taus = [1/8]
+    merge = [True, False]
+
+    for _, L in enumerate(Ls):
+
+        biases = [0.0,
+              0.25,
+              #0.5,
+              #0.75,
+              #1.5
+              ]
+        
+        
+        for _, bias in enumerate(biases):
+
+            Us = [#2.0, 
+                  5.0
+                  ] #U_determine(L, bias, 'prodApr9testbias')
+
+            print(Us)
+            #tfin = L * 0.9
+            #tfin = L * 7/8
+            tfin = L
+
+            #Us = U_determine(L, bias)
+
+            for tswitch in [tfin/4, 
+                            #tfin/2
+                            ]:
+
+                for k, U in enumerate(Us):
+                    
+                    dpt_single = {
+                        "U": [U],
+                        "L" : [L],
+                        "tfin" : [tfin],
+                        "TEdim": dims,
+                        "mixed": [False],
+                        "vs" : vss,
+                        "merge" : merge,
+                        "biasLR" : [bias],
+                        "n1init" : [0.75],
+                        #"lo" : [0.5],
+                        #"hi" : [1.0],
+                        "tswitch" : [tswitch],
+                        "timestep": taus,
+                        "order" : [ 'DLSR', 'LSDSR'],
+                        "repeat" : [repeat],
+                        "searchmode" : ['iterative'],
+                        "finaltol" : [
+                            #1e-3, 
+                            1e-5]
+                    }
+
+                    #print( dpt_single["U"], dpt_single["n1init"])
+                    gen_dpt_cluster(dpt_single)
+
+
+                    dpt_single = {
+                        "U": [U],
+                        "L" : [L],
+                        "tfin" : [tfin],
+                        "TEdim": dims,
+                        "mixed": [True],
+                        "vs" : vss,
+                        "merge" : merge,
+                        "biasLR" : [bias],
+                        "n1init" : [0.75],
+                        #"lo" : [0.5],
+                        #"hi" : [1.0],
+                        "tswitch" : [tswitch],
+                        "timestep": taus,
+                        "order" : [ 'DLSR', 'LSDSR', 'LRSDSLR', 'DLRSLR'],
+                        "repeat" : [repeat],
+                        "searchmode" : ['iterative'],
+                        "finaltol" : [
+                            #1e-3, 
+                            1e-5]
+                    }
+
+                    #print( dpt_single["U"], dpt_single["n1init"])
+                    gen_dpt_cluster(dpt_single)
+
+
 if __name__ == '__main__':
     
 
@@ -694,7 +786,7 @@ if __name__ == '__main__':
     #DPT_yastn()
     #DPT_bias_test()
     #DPT_bias_bs()
-    bench_fig1()
+    bench_basis()
     #bias_determine()
     #changerepeat()
     #DPT_yastn_binary()

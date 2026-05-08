@@ -63,10 +63,11 @@ def init_occupations(mapping, NW, NS):
     return occ
 
 
-def initial_state(NW, NS, U, muL, muR, vS0, alpha, mapping, order, merge, sym, D_total, curpath = '', muDs=[0, 10000], max2 = 4, max1 = 256, sites = [], **config_kwargs):
+def initial_state(NW, NS, U, muL, muR, vS0, alpha, mapping, order, merge, sym, D_total, curpath = '', muDs=[0, 10000], max2 = 4, max1 = 256, sites = [], Hdebug = False, **config_kwargs):
 
     print("init config: ", config_kwargs)
 
+    s2i = {s: i for i, s in enumerate(sites)}
     if os.path.isfile( f'{curpath}init.npy'):
         psi = load_psi(f'{curpath}init.npy', sym, message = "loading init", **config_kwargs)
         energy = np.loadtxt(f'{curpath}initenergy' )
@@ -85,12 +86,12 @@ def initial_state(NW, NS, U, muL, muR, vS0, alpha, mapping, order, merge, sym, D
     else:
         raise ValueError("Only sym = 'U1' or 'Z2' suported.")
 
-    H0, s2i, i2s, M = Hamiltonian(mapping)(NW, NS, muL, muR, muDs, vS0, U * (2 * alpha - 1), sym=sym, order=sites, **config_kwargs)
+    H0, M = Hamiltonian(mapping)(NW, NS, muL, muR, muDs, vS0, U * (2 * alpha - 1), Hdebug = Hdebug, sym=sym, order=sites, **config_kwargs)
     qI, qc, qcp, qn, dx, dn1, dn2, dI, m12, m21 = local_operators(sym=sym, **config_kwargs)
 
-
-    with open(f'{curpath}HamInit', 'w') as f:
-        np.savetxt(f, M, fmt = '%s')
+    if Hdebug:
+        with open(f'{curpath}HamInit', 'w') as f:
+            np.savetxt(f, M, fmt = '%s')
     
     psi = mps.random_mps(H0, n=n_profile, D_total=D_total, sigma=2, distribution='normal')
 
@@ -142,7 +143,7 @@ def initial_state(NW, NS, U, muL, muR, vS0, alpha, mapping, order, merge, sym, D
 
 
 def run_evolution(psi, NW, NS, U, muL, muR, vS0, vS1, mapping, order, merge, sym, D_total, tswitch, tfin, dt, lasttime = 0, 
-                  muDs=[0, 0], curpath = '', verbose=0, tdvptol = 1e-8, sites = [], **config_kwargs):
+                  muDs=[0, 0], curpath = '', verbose=0, tdvptol = 1e-8, sites = [], Hdebug = False, **config_kwargs):
 
     
     print("dynamics config: ", config_kwargs)
@@ -150,28 +151,39 @@ def run_evolution(psi, NW, NS, U, muL, muR, vS0, vS1, mapping, order, merge, sym
     total = 0
     cnt = 0
 
-    H1, s2i, i2s, M1 = Hamiltonian(mapping)(NW, NS, muL, muR, muDs, vS0, U, sym=sym, order=sites, **config_kwargs)
-    H2, s2i, i2s, M2 = Hamiltonian(mapping)(NW, NS, muL, muR, muDs, vS1, U, sym=sym, order=sites, **config_kwargs)
+
     qI, qc, qcp, qn, dx, dn1, dn2, dI, m12, m21 = local_operators(sym=sym, **config_kwargs)
-
+    s2i = {s: i for i, s in enumerate(sites)}
     On1 = merge_sites(op1site(dn1, 'D1', s2i, qI, dI), s2i, merge)
-    On2 = merge_sites(op1site(dn2, 'D1', s2i, qI, dI), s2i, merge)
+    #On2 not relevant
+    #On2 = merge_sites(op1site(dn2, 'D1', s2i, qI, dI), s2i, merge)
     Om12 = merge_sites(op1site(m12, 'D1', s2i, qI, dI), s2i, merge)
-    Ons = {ss: merge_sites(op1site(qn, ss, s2i, qI, dI), s2i, merge) for ss in s2i if ss != 'D1'}
 
-    H1 = merge_sites(H1, s2i, merge)
-    H2 = merge_sites(H2, s2i, merge)
+    QPC = [s for s in s2i.keys() if s.startswith("S")]
 
-    with open(f'{curpath}HamT1', 'w') as f:
-        np.savetxt(f, M1, fmt = '%s')
+    print(f"QPC : {QPC}")
+    Ons = {ss: merge_sites(op1site(qn, ss, s2i, qI, dI), s2i, merge) for ss in QPC}
 
-    with open(f'{curpath}HamT2', 'w') as f:
-        np.savetxt(f, M2, fmt = '%s')
 
     opts_svd = {"D_total": D_total, 'tol': tdvptol}
     fprint("Running time evolution ... ")
 
-    for t0, t1, H in [(0, tswitch, H1), (tswitch, tfin, H2)]:
+    for t0, t1, stage in [(0, tswitch, 1), (tswitch, tfin, 2)]:
+
+        if stage == 1:
+            H, M = Hamiltonian(mapping)(NW, NS, muL, muR, muDs, vS0, U, sym=sym, Hdebug = Hdebug, order=sites, **config_kwargs)
+            if Hdebug:
+                with open(f'{curpath}HamT1', 'w') as f:
+                    np.savetxt(f, M, fmt = '%s')
+
+        else:
+            H, M = Hamiltonian(mapping)(NW, NS, muL, muR, muDs, vS1, U, sym=sym, Hdebug = Hdebug, order=sites, **config_kwargs)
+            if Hdebug:
+                with open(f'{curpath}HamT2', 'w') as f:
+                    np.savetxt(f, M, fmt = '%s')
+
+        H = merge_sites(H, s2i, merge)
+
         times = np.linspace(t0, t1, int((t1 - t0) /dt) + 1)
         times = [t0, t0+dt/128, t0+dt/64, t0+dt/32, t0+dt/16, t0+dt/8, t0+dt/4, t0+dt/2] + list(times)[1:]
 
@@ -199,7 +211,7 @@ def run_evolution(psi, NW, NS, U, muL, muR, vS0, vS1, mapping, order, merge, sym
             n1 = mps.vdot(psi, On1, psi).real
             m12 = mps.vdot(psi, Om12, psi).real
 
-            occs = [ mps.vdot(psi, Ons[s], psi).real for s in sites if 'S' in s]
+            occs = [ mps.vdot(psi, Ons[s], psi).real for s in QPC]
 
             ent = psi.get_entropy()
 
