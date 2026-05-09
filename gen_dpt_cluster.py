@@ -453,9 +453,10 @@ def U_determine(L, bias, tag):
     if bias == 0:
 
         Us = {
-            32 : np.arange(3.4, 3.9, 0.025),
-            64 : np.arange(3.3, 3.8, 0.025),
-            128: np.arange(3.3, 3.7, 0.025)
+            32 : np.arange(3.4, 3.8, 0.05),
+            64 : np.arange(3.35, 3.75, 0.05),
+            128: np.arange(3.3, 3.65, 0.05),
+            256: np.arange(3.3, 3.65, 0.05),
         }
 
     elif tag == 'prodApr9testbias':
@@ -768,6 +769,66 @@ def bench_basis():
                     gen_dpt_cluster(dpt_single)
 
 
+
+def DPT_nobias_bs():
+
+    Ls = [32, 64, 128, 256]
+    dims = [128, 256]
+    
+    repeat = 40
+    vss  = [3/4]
+    taus = [1/8]
+    merge = [True]
+
+    for _, L in enumerate(Ls):
+
+        biases = [0.0,
+              ]
+        
+        
+        for _, bias in enumerate(biases):
+
+            Us = U_determine(L, bias, 'prodApr9testbias')
+
+            print(Us)
+            #tfin = L * 0.9
+            tfin = L * 7/8
+
+            #Us = U_determine(L, bias)
+
+            for tswitch in [tfin/4, 
+                            tfin/2
+                            ]:
+
+                for k, U in enumerate(Us):
+                    
+                    dpt_single = {
+                        "U": [U],
+                        "L" : [L],
+                        "tfin" : [tfin],
+                        "TEdim": dims,
+                        "mixed": [True],
+                        "vs" : vss,
+                        "merge" : merge,
+                        "biasLR" : [bias],
+                        #"n1init" : get_n1init(L, U, 'Mar3'),
+                        "lo" : [0.5],
+                        "hi" : [1.0],
+                        "tswitch" : [tswitch],
+                        "timestep": taus,
+                        "order" : [ 'DLSR'],
+                        "repeat" : [repeat],
+                        "searchmode" : ['binarysearch'],
+                        "finaltol" : [
+                            #1e-3, 
+                            1e-5]
+                    }
+
+                    #print( dpt_single["U"], dpt_single["n1init"])
+                    gen_dpt_cluster(dpt_single)
+
+
+
 if __name__ == '__main__':
     
 
@@ -786,7 +847,8 @@ if __name__ == '__main__':
     #DPT_yastn()
     #DPT_bias_test()
     #DPT_bias_bs()
-    bench_basis()
+    #bench_basis()
+    DPT_nobias_bs()
     #bias_determine()
     #changerepeat()
     #DPT_yastn_binary()
