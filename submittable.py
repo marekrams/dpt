@@ -272,6 +272,7 @@ def run_evolution(psi, NW, NS, U, muL, muR, vS0, vS1, mapping, order, merge, sym
             with open(f'{curpath}Seff', 'a') as f:
                 np.savetxt( f, [effE])
 
+            del psidata
             start_time = time.time()
 
     fprint("Done.")
