@@ -415,10 +415,10 @@ def singlerun_binary_search(para, config_kwargs):
                 #alpha = np.mean(np.loadtxt( f'{curpath}n1')[-8:])
                 lo = np.loadtxt( f'{curpath}lo')
                 hi = np.loadtxt( f'{curpath}hi')
-                points = [lo, hi]
+                #points = [lo, hi]
 
-                lo = min(points)
-                hi = max(points)
+                #lo = min(points)
+                #hi = max(points)
                 
                 fprint( f"current lo = {lo}, hi = {hi}")
                 continue
@@ -457,6 +457,8 @@ def singlerun_binary_search(para, config_kwargs):
 
         if np.abs(new - alpha) < finaltol:
             fprint("final tol ", np.abs(new - alpha))
+            #np.savetxt( f'{curpath}TOL_REACHED', [])
+            np.savetxt( f'{getcwd()}/TOL_REACHED', [])
             return True
         
         # determine condition for choosing interval
@@ -464,15 +466,21 @@ def singlerun_binary_search(para, config_kwargs):
         # choose lower
         if new < alpha :
 
-            points = [lo, new]
-            lo = min(points)
-            hi = max(points)
+            # points = [lo, new]
+            # lo = min(points)
+            # hi = max(points)
+
+            lo = lo
+            hi = new
 
         # choose higher
         else:
-            points = [new, hi]
-            lo = min(points)
-            hi = max(points)
+            # points = [new, hi]
+            # lo = min(points)
+            # hi = max(points)
+
+            lo = new
+            hi = hi
 
         np.savetxt( f'{curpath}lo', [lo])
         np.savetxt( f'{curpath}hi', [hi])
@@ -486,6 +494,11 @@ if __name__ == '__main__':
 
     #print(threadpool_info())
     #np.__config__.show()
+
+    if os.path.isfile(f'{getcwd()}/TOL_REACHED'):
+        print("TOL REACHED")
+        exit()
+
 
     with open( getcwd() + '/dptpara.json', 'r') as io:
         para = json.load(io)
