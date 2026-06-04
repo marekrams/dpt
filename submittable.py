@@ -142,8 +142,8 @@ def initial_state(NW, NS, U, muL, muR, vS0, alpha, mapping, order, merge, sym, D
     return psi, info.energy
 
 
-def run_evolution(psi, NW, NS, U, muL, muR, vS0, vS1, mapping, order, merge, sym, D_total, tswitch, tfin, dt, lasttime = 0, 
-                  muDs=[0, 0], curpath = '', verbose=0, tdvptol = 1e-8, sites = [], Hdebug = False, **config_kwargs):
+def run_evolution(psi, NW, NS, U, muL, muR, vS0, vS1, mapping, order, merge, sym, D_total, tswitch, tfin, dt, lasttime = 0.0, 
+                  muDs=[0.0, 0.0], curpath = '', verbose=0, tdvptol = 1e-8, sites = [], Hdebug = False, **config_kwargs):
 
     
     print("dynamics config: ", config_kwargs)
@@ -382,6 +382,7 @@ def singlerun_binary_search(para, config_kwargs):
     merge = bool(para["merge"])
     mapping = 'mixed' if mixed else 'position'
     sym = 'U1'
+    n1init = float(para["n1init"])
     order = para['order']
     D = int(para['TEdim'])
     vs = float(para['vs'])
@@ -399,7 +400,7 @@ def singlerun_binary_search(para, config_kwargs):
 
         fprint(f"repeat: {i}")
 
-        curpath = f'{getcwd()}/bs_repeat{i}/'
+        curpath = f'{getcwd()}/bs_repeat{i}_lo{lo}_hi{hi}/'
 
         if not os.path.isdir(curpath):
             mkdir(curpath)
@@ -435,7 +436,11 @@ def singlerun_binary_search(para, config_kwargs):
         else:
             fprint("Starting new")
 
-            alpha = (lo + hi) / 2
+            if i == 0:
+                alpha = n1init
+            else:
+                alpha = (lo + hi) / 2
+
             sites = order_sites(mapping, order, L, NS=NS, muL = muL, muR = muR)
 
             psi0 , _ = initial_state(L, NS, U, 0.0, 0.0, 0, alpha, mapping, order, merge, sym, D, curpath=curpath, max1 = max1, max2 = max2, sites = sites, **config_kwargs)
@@ -445,7 +450,10 @@ def singlerun_binary_search(para, config_kwargs):
 
             lasttime = 0.0
         
-        alpha = (lo + hi) / 2
+        if i == 0:
+            alpha = n1init
+        else:
+            alpha = (lo + hi) / 2
 
         run_evolution(psi0, L, NS, U, muL, muR, 0, vs, mapping, order, merge, sym, D, tswitch, tfin, dt, 
                       lasttime = lasttime, curpath = curpath, tdvptol= tdvptol, verbose=0, sites = sites, **config_kwargs)
@@ -466,24 +474,20 @@ def singlerun_binary_search(para, config_kwargs):
         # choose lower
         if new < alpha :
 
-            # points = [lo, new]
-            # lo = min(points)
-            # hi = max(points)
-
-            lo = lo
-            hi = new
+            points = [lo, new]
+            lo = min(points)
+            hi = max(points)
 
         # choose higher
         else:
-            # points = [new, hi]
-            # lo = min(points)
-            # hi = max(points)
 
-            lo = new
-            hi = hi
+            points = [new, hi]
+            lo = min(points)
+            hi = max(points)
 
-        np.savetxt( f'{curpath}lo', [lo])
-        np.savetxt( f'{curpath}hi', [hi])
+
+        np.savetxt( f'{curpath}lo', [lo], fmt = '%.7f')
+        np.savetxt( f'{curpath}hi', [hi], fmt = '%.7f')
 
     return False
 

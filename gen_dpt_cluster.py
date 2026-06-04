@@ -455,6 +455,7 @@ def U_determine(L, bias, tag):
         Us = {
             32 : np.arange(3.4, 3.8, 0.05),
             64 : np.arange(3.35, 3.75, 0.05),
+            96: np.arange(3.3, 3.65, 0.05),
             128: np.arange(3.3, 3.65, 0.05),
             256: np.arange(3.3, 3.65, 0.05),
         }
@@ -681,12 +682,12 @@ def bench_fig1():
 def bench_basis():
 
     Ls = [128]
-    dims = [256]
+    dims = [64, 128, 256]
     
     repeat = 1
     vss  = [3/4]
     taus = [1/8]
-    merge = [True, False]
+    merge = [True]
 
     for _, L in enumerate(Ls):
 
@@ -700,14 +701,14 @@ def bench_basis():
         
         for _, bias in enumerate(biases):
 
-            Us = [#2.0, 
-                  5.0
+            Us = [1.0, 
+                  6.0
                   ] #U_determine(L, bias, 'prodApr9testbias')
 
             print(Us)
             #tfin = L * 0.9
             #tfin = L * 7/8
-            tfin = L
+            tfin = L * 7/8
 
             #Us = U_determine(L, bias)
 
@@ -726,7 +727,7 @@ def bench_basis():
                         "vs" : vss,
                         "merge" : merge,
                         "biasLR" : [bias],
-                        "n1init" : [0.75],
+                        "n1init" : [0.52, 0.98],
                         #"lo" : [0.5],
                         #"hi" : [1.0],
                         "tswitch" : [tswitch],
@@ -772,10 +773,10 @@ def bench_basis():
 
 def DPT_nobias_bs():
 
-    Ls = [32, 64, 128, 256]
+    Ls = [32, 64, 96, 128]
     dims = [128, 256]
     
-    repeat = 40
+    repeat = 14
     vss  = [3/4]
     taus = [1/8]
     merge = [True]
@@ -811,7 +812,7 @@ def DPT_nobias_bs():
                         "vs" : vss,
                         "merge" : merge,
                         "biasLR" : [bias],
-                        #"n1init" : get_n1init(L, U, 'Mar3'),
+                        "n1init" : [0.52, 0.98],
                         "lo" : [0.5],
                         "hi" : [1.0],
                         "tswitch" : [tswitch],
@@ -847,8 +848,8 @@ if __name__ == '__main__':
     #DPT_yastn()
     #DPT_bias_test()
     #DPT_bias_bs()
-    #bench_basis()
-    DPT_nobias_bs()
+    bench_basis()
+    #DPT_nobias_bs()
     #bias_determine()
     #changerepeat()
     #DPT_yastn_binary()
