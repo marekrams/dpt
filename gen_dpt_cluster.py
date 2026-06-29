@@ -551,66 +551,66 @@ def bias_determine(L):
 #                     gen_dpt_cluster(dpt_single)
 
 
-def DPT_bias_bs():
+# def DPT_bias_bs():
 
-    Ls = [32, 64, 128]
-    dims = [128, 256]
+#     Ls = [32, 64, 128]
+#     dims = [128, 256]
     
-    repeat = 40
-    vss  = [1/8, 3/4]
-    taus = [1/8]
-    merge = [True]
+#     repeat = 40
+#     vss  = [1/8, 3/4]
+#     taus = [1/8]
+#     merge = [True]
 
-    for _, L in enumerate(Ls):
+#     for _, L in enumerate(Ls):
 
-        biases = [#0.0,
-              #0.25,
-              #0.5,
-              0.75,
-              1.5
-              ]
+#         biases = [#0.0,
+#               #0.25,
+#               #0.5,
+#               0.75,
+#               1.5
+#               ]
         
         
-        for _, bias in enumerate(biases):
+#         for _, bias in enumerate(biases):
 
-            Us = U_determine(L, bias, 'prodApr9testbias')
+#             Us = U_determine(L, bias, 'prodApr9testbias')
 
-            print(Us)
-            #tfin = L * 0.9
-            tfin = L * 7/8
+#             print(Us)
+#             #tfin = L * 0.9
+#             tfin = L * 7/8
 
-            #Us = U_determine(L, bias)
+#             #Us = U_determine(L, bias)
 
-            for tswitch in [tfin/4, 
-                            tfin/2
-                            ]:
+#             for tswitch in [tfin/4, 
+#                             tfin/2
+#                             ]:
 
-                for k, U in enumerate(Us):
+#                 for k, U in enumerate(Us):
                     
-                    dpt_single = {
-                        "U": [U],
-                        "L" : [L],
-                        "tfin" : [tfin],
-                        "TEdim": dims,
-                        "mixed": [True],
-                        "vs" : vss,
-                        "merge" : merge,
-                        "biasLR" : [bias],
-                        #"n1init" : get_n1init(L, U, 'Mar3'),
-                        "lo" : [0.5],
-                        "hi" : [1.0],
-                        "tswitch" : [tswitch],
-                        "timestep": taus,
-                        "order" : [ 'DLRSLR'],
-                        "repeat" : [repeat],
-                        "searchmode" : ['binarysearch'],
-                        "finaltol" : [
-                            #1e-3, 
-                            1e-5]
-                    }
+#                     dpt_single = {
+#                         "U": [U],
+#                         "L" : [L],
+#                         "tfin" : [tfin],
+#                         "TEdim": dims,
+#                         "mixed": [True],
+#                         "vs" : vss,
+#                         "merge" : merge,
+#                         "biasLR" : [bias],
+#                         #"n1init" : get_n1init(L, U, 'Mar3'),
+#                         "lo" : [0.5],
+#                         "hi" : [1.0],
+#                         "tswitch" : [tswitch],
+#                         "timestep": taus,
+#                         "order" : [ 'DLRSLR'],
+#                         "repeat" : [repeat],
+#                         "searchmode" : ['binarysearch'],
+#                         "finaltol" : [
+#                             #1e-3, 
+#                             1e-5]
+#                     }
 
-                    #print( dpt_single["U"], dpt_single["n1init"])
-                    gen_dpt_cluster(dpt_single)
+#                     #print( dpt_single["U"], dpt_single["n1init"])
+#                     gen_dpt_cluster(dpt_single)
 
 
 
@@ -772,7 +772,7 @@ def bench_basis():
 
 
 
-def last_check():
+def onepass_bias():
 
     Ls = [128, 256]
     dims = [128, 256]
@@ -831,14 +831,12 @@ def last_check():
                     gen_dpt_cluster(dpt_single)
 
 
+def onepass_nobias():
 
+    Ls = [1024]
+    dims = [128]
 
-def DPT_nobias_bs():
-
-    Ls = [32, 64, 96, 128]
-    dims = [128, 256]
-    
-    repeat = 14
+    repeat = 1
     vss  = [3/4]
     taus = [1/8]
     merge = [True]
@@ -847,24 +845,26 @@ def DPT_nobias_bs():
 
         biases = [0.0,
               ]
-        
-        
+
+
         for _, bias in enumerate(biases):
 
-            Us = U_determine(L, bias, 'prodApr9testbias')
+            Us = np.linspace(3.4, 3.5, 30) #U_determine(L, bias, 'prodApr9testbias')
 
             print(Us)
             #tfin = L * 0.9
             tfin = L * 7/8
+            #tfin = L * 15/16
 
             #Us = U_determine(L, bias)
 
-            for tswitch in [tfin/4, 
-                            tfin/2
+            for tswitch in [#tfin/4,
+                            0
+                            #tfin/2
                             ]:
 
                 for k, U in enumerate(Us):
-                    
+
                     dpt_single = {
                         "U": [U],
                         "L" : [L],
@@ -874,21 +874,79 @@ def DPT_nobias_bs():
                         "vs" : vss,
                         "merge" : merge,
                         "biasLR" : [bias],
-                        "n1init" : [0.52, 0.98],
-                        "lo" : [0.5],
-                        "hi" : [1.0],
+                        "n1init" : [1.0],
+                        #"lo" : [0.5],
+                        #"hi" : [1.0],
                         "tswitch" : [tswitch],
                         "timestep": taus,
-                        "order" : [ 'DLSR'],
+                        "order" : [ 'LSDSR'],
                         "repeat" : [repeat],
-                        "searchmode" : ['binarysearch'],
+                        "searchmode" : ['iterative'],
                         "finaltol" : [
-                            #1e-3, 
+                            #1e-3,
                             1e-5]
                     }
 
                     #print( dpt_single["U"], dpt_single["n1init"])
                     gen_dpt_cluster(dpt_single)
+
+
+# def DPT_nobias_bs():
+
+#     Ls = [32, 64, 96, 128]
+#     dims = [128, 256]
+    
+#     repeat = 14
+#     vss  = [3/4]
+#     taus = [1/8]
+#     merge = [True]
+
+#     for _, L in enumerate(Ls):
+
+#         biases = [0.0,
+#               ]
+        
+        
+#         for _, bias in enumerate(biases):
+
+#             Us = U_determine(L, bias, 'prodApr9testbias')
+
+#             print(Us)
+#             #tfin = L * 0.9
+#             tfin = L * 7/8
+
+#             #Us = U_determine(L, bias)
+
+#             for tswitch in [tfin/4, 
+#                             tfin/2
+#                             ]:
+
+#                 for k, U in enumerate(Us):
+                    
+#                     dpt_single = {
+#                         "U": [U],
+#                         "L" : [L],
+#                         "tfin" : [tfin],
+#                         "TEdim": dims,
+#                         "mixed": [True],
+#                         "vs" : vss,
+#                         "merge" : merge,
+#                         "biasLR" : [bias],
+#                         "n1init" : [0.52, 0.98],
+#                         "lo" : [0.5],
+#                         "hi" : [1.0],
+#                         "tswitch" : [tswitch],
+#                         "timestep": taus,
+#                         "order" : [ 'DLSR'],
+#                         "repeat" : [repeat],
+#                         "searchmode" : ['binarysearch'],
+#                         "finaltol" : [
+#                             #1e-3, 
+#                             1e-5]
+#                     }
+
+#                     #print( dpt_single["U"], dpt_single["n1init"])
+#                     gen_dpt_cluster(dpt_single)
 
 
 
@@ -911,7 +969,7 @@ if __name__ == '__main__':
     #DPT_bias_test()
     #DPT_bias_bs()
     #bench_basis()
-    last_check()
+    onepass_bias()
     #DPT_nobias_bs()
     #bias_determine()
     #changerepeat()
