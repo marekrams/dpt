@@ -142,7 +142,7 @@ def initial_state(NW, NS, U, muL, muR, vS0, alpha, mapping, order, merge, sym, D
     return psi, info.energy
 
 
-def run_evolution(psi, NW, NS, U, muL, muR, vS0, vS1, mapping, order, merge, sym, D_total, tswitch, tfin, dt, lasttime = 0.0, 
+def run_evolution(psi, NW, NS, U, muL, muR, vS0, vS1, mapping, order, merge, sym, D_total, tswitch, tfin, dt, lasttime = -1, 
                   muDs=[0.0, 0.0], curpath = '', verbose=0, tdvptol = 1e-8, sites = [], Hdebug = False, **config_kwargs):
 
     
@@ -197,7 +197,7 @@ def run_evolution(psi, NW, NS, U, muL, muR, vS0, vS1, mapping, order, merge, sym
         start_time = time.time()
         #fprint(times)
         for step in mps.tdvp_(psi, H, times, method='12site', dt=dt, opts_svd=opts_svd, 
-                              yield_initial=True if times[0] == 0 else False, 
+                              yield_initial=True if lasttime == -1 else False, 
                               subtract_E=True):
 
 
@@ -304,7 +304,7 @@ def singlerun(para, config_kwargs):
     max1 = int(para["max1"])
     finaltol = float(para['finaltol'])
 
-
+    new = alpha
     tdvptol = 1e-6
     for i in range(repeat):
 
@@ -317,16 +317,17 @@ def singlerun(para, config_kwargs):
 
         if os.path.isfile( f'{curpath}times'):
 
-            lasttime = np.loadtxt( f'{curpath}times')[-1]
+            lasttime = np.loadtxt( f'{curpath}times', ndmin = 1)[-1]
             sites = np.loadtxt( f'{curpath}sites', dtype = 'str')
+            print(sites)
 
             # finish!
             if lasttime == tfin:
                 fprint( f"iter {i} exists, skip!")
-                alpha = np.mean(np.loadtxt( f'{curpath}n1')[-8:])
+                alpha = np.mean(np.loadtxt( f'{curpath}n1', ndmin = 1)[-8:])
                 fprint( f"current alpha = {alpha}")
 
-                if np.abs(float(para['n1init']) - alpha) < finaltol:
+                if np.abs(new - alpha) < finaltol:
                     return True, new - alpha
                 
                 continue
@@ -407,8 +408,10 @@ def singlerun_binary_search(para, config_kwargs):
 
         if os.path.isfile( f'{curpath}times'):
 
-            lasttime = np.loadtxt( f'{curpath}times')[-1]
+            lasttime = np.loadtxt( f'{curpath}times', ndmin = 1)[-1]
             sites = np.loadtxt( f'{curpath}sites', dtype = 'str')
+
+            print(sites)
 
             # finish!
             if lasttime == tfin:
@@ -489,7 +492,10 @@ def singlerun_binary_search(para, config_kwargs):
         np.savetxt( f'{curpath}lo', [lo], fmt = '%.7f')
         np.savetxt( f'{curpath}hi', [hi], fmt = '%.7f')
 
-    return False
+
+
+
+    return None
 
 
 
@@ -554,3 +560,5 @@ if __name__ == '__main__':
         
     else:
         raise ValueError("not recognized searchmode")
+    
+    np.savetxt( f'{getcwd()}/CALC_FIN', [])

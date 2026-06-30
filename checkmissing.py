@@ -1,6 +1,6 @@
 import subprocess
 from glob import glob
-from os import getcwd
+from os import getcwd, path
 import numpy as np
 
 
@@ -24,7 +24,8 @@ def searchkey(needle, haystack : str, default_key = None, whichseg = -1, default
         print(needle)
         print("Have you checked needle and haystack?")
 
-def check_missing():
+# check if the jobs are still running by checking the slurm output, if not, print out the terminated ones
+def check_missing(default = "U*"):
     output = subprocess.run(['squeue', '-u', 'knl20'], capture_output=True)
     output = output.stdout.splitlines()
 
@@ -38,32 +39,39 @@ def check_missing():
 
     
     pwd = getcwd()
-    fs = glob( f'{pwd}/U*/sl*')
+    fs = glob( f'{pwd}/{default}/sl*')
 
 
-    terminated = set()
+    terminatedlog = set()
+    terminateddir = set()
     for f in fs:
         
-        num = f.split('/')[-1]
+        *parent, num = f.split('/')
+
+        parent = '/'.join(parent)
+        if path.isfile(f'{parent}/CALC_FIN'):
+            continue
 
         prefix = 'slurm-'
         suffix = '.out'
-        num = num[len(prefix):]
-        num = num[:-len(suffix)]
+        num = num.strip(prefix)
+        num = num.strip(suffix)
 
         num = int(num)
         
         if num not in curjobs:
-            terminated.add( f)
+            terminatedlog.add( f)
+            terminateddir.add( parent)
 
 
-    print(terminated)
+    print("terminated log: ", terminatedlog)
+    np.savetxt( f'{pwd}/TERMINATEDDIR', list(terminateddir), fmt = '%s')
 
 
 # we strictly need n1 to run to full
-def check_TOL():
+def check_TOL(default = "U*"):
 
-    fs = glob( f'{getcwd()}/U*')
+    fs = glob( f'{getcwd()}/{default}')
 
     for f in fs:
 
@@ -91,5 +99,5 @@ def check_TOL():
             np.savetxt(f'{f}/TOL_REACHED', [])
 
 if __name__ == '__main__':
-    #check_missing()
-    check_TOL()
+    check_missing(default = "*dim1024*")
+    #check_TOL()

@@ -681,14 +681,14 @@ def bench_fig1():
 
 def bench_basis():
 
-    Ls = [128]
-    dims = [64, 128, 256]
-    
+    Ls = [32]
+    dims = [128, 256, 512, 1024]
+
     repeat = 1
     vss  = [3/4]
     taus = [1/8]
     merge = [True]
-    n1inits = [0.5, 1.0]
+    n1inits = [1.0]
 
     for _, L in enumerate(Ls):
 
@@ -698,12 +698,13 @@ def bench_basis():
               #0.75,
               #1.5
               ]
-        
-        
+
+
         for _, bias in enumerate(biases):
 
-            Us = [1.0, 
-                  6.0
+            Us = [3.3,
+                  3.5,
+                  3.7
                   ] #U_determine(L, bias, 'prodApr9testbias')
 
             print(Us)
@@ -713,12 +714,12 @@ def bench_basis():
 
             #Us = U_determine(L, bias)
 
-            for tswitch in [tfin/4, 
+            for tswitch in [tfin/2,
                             #tfin/2
                             ]:
 
                 for k, U in enumerate(Us):
-                    
+
                     dpt_single = {
                         "U": [U],
                         "L" : [L],
@@ -737,7 +738,7 @@ def bench_basis():
                         "repeat" : [repeat],
                         "searchmode" : ['iterative'],
                         "finaltol" : [
-                            #1e-3, 
+                            #1e-3,
                             1e-5]
                     }
 
@@ -763,7 +764,7 @@ def bench_basis():
                         "repeat" : [repeat],
                         "searchmode" : ['iterative'],
                         "finaltol" : [
-                            #1e-3, 
+                            #1e-3,
                             1e-5]
                     }
 
@@ -968,8 +969,8 @@ if __name__ == '__main__':
     #DPT_yastn()
     #DPT_bias_test()
     #DPT_bias_bs()
-    #bench_basis()
-    onepass_bias()
+    bench_basis()
+    #onepass_bias()
     #DPT_nobias_bs()
     #bias_determine()
     #changerepeat()

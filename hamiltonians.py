@@ -24,7 +24,7 @@ def  local_operators(sym='U1', **config_kwargs):
     return qI, qc, qcp, qn, dx, dn1, dn2, dI, m12, m21
 
 
-def Hamiltonian_dpt_position(NW, NS, muL, muR, muDs, vS, U, w0=1, order='DLSR', sym='U1', Hdebug = False, **config_kwargs):
+def Hamiltonian_dpt_position(NW, NS, muL, muR, muDs, vS, U, w0=1, order=[], sym='U1', Hdebug = False, **config_kwargs):
     """ generate MPO for DPT in position basis. first dot is interacting with 4 sites """
     #
     qI, qc, qcp, qn, dx, dn1, dn2, dI, m12, m21 = local_operators(sym=sym, **config_kwargs)
@@ -32,17 +32,19 @@ def Hamiltonian_dpt_position(NW, NS, muL, muR, muDs, vS, U, w0=1, order='DLSR', 
     #
     vL = vR = vLR = w0
     #
-    if order == 'DLSR':
-        sites = [D(1)]
-        sites += [L(k) for k in range(NW, 0, -1)]  # 'L1' is for L mode at the junction
-        sites += [S(k) for k in range(1, NS + 1)]  # 'S1' connected to L1
-        sites += [R(k) for k in range(1, NW + 1)]  # 'R1' is for R mode at the junction
-    elif order == 'LDSR':
-        sites = [L(k) for k in range(NW, 0, -1)]   # 'L1' is for L mode at the junction
-        sites += [S(1), S(2), D(1), S(3), S(4)]
-        sites += [R(k) for k in range(1, NW + 1)]  # 'R1' is for R mode at the junction
-    else:
-        sites = order
+    # if order == 'DLSR':
+    #     sites = [D(1)]
+    #     sites += [L(k) for k in range(NW, 0, -1)]  # 'L1' is for L mode at the junction
+    #     sites += [S(k) for k in range(1, NS + 1)]  # 'S1' connected to L1
+    #     sites += [R(k) for k in range(1, NW + 1)]  # 'R1' is for R mode at the junction
+    # elif order == 'LDSR':
+    #     sites = [L(k) for k in range(NW, 0, -1)]   # 'L1' is for L mode at the junction
+    #     sites += [S(1), S(2), D(1), S(3), S(4)]
+    #     sites += [R(k) for k in range(1, NW + 1)]  # 'R1' is for R mode at the junction
+    # else:
+    #     sites = order
+
+    sites = order
 
     s2i = {s: i for i, s in enumerate(sites)}
     i2s = {i: s for i, s in enumerate(sites)}
@@ -96,7 +98,7 @@ def Hamiltonian_dpt_position(NW, NS, muL, muR, muDs, vS, U, w0=1, order='DLSR', 
     return H, M
 
 
-def Hamiltonian_dpt_momentum(NW, NS, muL, muR, muDs, vS, U, w0=1, order='DLR', sym='U1', Hdebug = False, **config_kwargs):
+def Hamiltonian_dpt_momentum(NW, NS, muL, muR, muDs, vS, U, w0=1, order=[], sym='U1', Hdebug = False, **config_kwargs):
     """ generate mpo for dpt model in mixed basis """
     #
     qI, qc, qcp, qn, dx, dn1, dn2, dI, m12, m21 = local_operators(sym=sym, **config_kwargs)
@@ -105,12 +107,13 @@ def Hamiltonian_dpt_momentum(NW, NS, muL, muR, muDs, vS, U, w0=1, order='DLR', s
     #
     NW1 = NW + NS // 2 + 1
     #
-    if order == 'DLR':
-        sites = [D(1)]
-        sites += [L(k) for k in range(1, NW1)]
-        sites += [R(k) for k in range(1, NW1)]
-    else:
-        sites = order
+    # if order == 'DLR':
+    #     sites = [D(1)]
+    #     sites += [L(k) for k in range(1, NW1)]
+    #     sites += [R(k) for k in range(1, NW1)]
+    # else:
+    #     sites = order
+    sites = order
 
     s2i = {s: i for i, s in enumerate(sites)}
     i2s = {i: s for i, s in enumerate(sites)}
