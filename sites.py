@@ -18,11 +18,36 @@ def D(k):
 
 
 
-def mixed_order(NW, muL, muR, vL, vR):
+
+def vwk(k, NW, mu, vLR, rtype = 'sin-transform', Lambda = None):
+    """ generate the coupling for the momentum basis """
+    NW1 = NW + 1
+
+    if rtype == 'sin-transform':
+        w = mu + 2 * vLR * np.cos(np.pi * k / NW1)
+        v = vLR * np.sin(np.pi * k / NW1) * np.sqrt(2 / NW1)
+
+    elif rtype == 'log':
+        if Lambda is None:
+            raise ValueError("For log discretization, Lambda must be specified.")
+        
+        sgn = np.sign(  k - NW//2 - 1/2)
+        effk = k if k <= NW//2 else NW1 - k
+        w = mu + 2 * vLR * sgn * Lambda ** ( - effk - 1/2)
+        v = vLR * np.sqrt( 2 / np.pi * ( 1 - 1/Lambda ) * Lambda ** ( - effk))
+    
+    else:
+        raise ValueError("rtype should be 'sin-transform' or 'log'.")
+
+    return w, v
+
+
+
+def mixed_order(NW, muL, muR, vL, vR, rtype = 'sin-transform', Lambda = None):
 
     NW1 = NW + 1
-    raw = [(muR + 2 * vR * np.cos(np.pi * k / NW1), R(k)) for k in range(1, NW1)] + \
-        [(muL + 2 * vL * np.cos(np.pi * k / NW1), L(k)) for k in range(1, NW1)] 
+    raw = [(vwk(k, NW, muR, vR, rtype = rtype, Lambda = Lambda)[0], R(k)) for k in range(1, NW1)] + \
+        [(vwk(k, NW, muL, vL, rtype = rtype, Lambda = Lambda)[0], L(k)) for k in range(1, NW1)] 
     
     sites = [s for _, s in sorted(raw, reverse=True)]
     return sites
@@ -38,7 +63,7 @@ def SDS_sites(NS):
 def S_sites(NS):
     return [S(k) for k in range(1, NS + 1)]
 
-def order_sites(mapping, order, NW, NS=4, muL =0.0, muR = 0.0, vL = 1.0, vR = 1.0):
+def order_sites(mapping, order, NW, NS=4, muL =0.0, muR = 0.0, vL = 1.0, vR = 1.0, rtype = 'sin-transform', Lambda = None):
     """ predefined ordering of sites """
     if mapping == 'position':
         if order == 'DLSR':
@@ -62,7 +87,7 @@ def order_sites(mapping, order, NW, NS=4, muL =0.0, muR = 0.0, vL = 1.0, vR = 1.
             # for k in range(1, NW + 1):
             #     sites.append(L(k))
             #     sites.append(R(k))
-            sites = mixed_order(NW, muL, muR, vL, vR)
+            sites = mixed_order(NW, muL, muR, vL, vR, rtype = rtype, Lambda = Lambda)
             if order == 'LRSDSLR':
                 return sites[:NW] + SDS_sites(NS) + sites[NW:]
             if order == 'DLRSLR':

@@ -18,5 +18,7 @@
     "max1": 256,
     "max2": 64,
     "merge": true,
-    "finaltol": 1e-05
+    "finaltol": 1e-05,
+    "rtype": "log",
+    "Lambda": 1.2
 }

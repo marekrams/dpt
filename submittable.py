@@ -24,7 +24,7 @@ def fprint(*msg):
 def Hamiltonian( key):
     ham = {"position": Hamiltonian_dpt_position,
                "mixed": Hamiltonian_dpt_mixed,
-               "momentum": Hamiltonian_dpt_momentum,}
+               "momentum": Hamiltonian_dpt_momentum}
     
     return ham[key]
 
@@ -63,7 +63,7 @@ def init_occupations(mapping, NW, NS):
     return occ
 
 
-def initial_state(NW, NS, U, muL, muR, vS0, alpha, mapping, order, merge, sym, D_total, curpath = '', muDs=[0, 10000], max2 = 4, max1 = 256, sites = [], Hdebug = False, **config_kwargs):
+def initial_state(NW, NS, U, muL, muR, vS0, alpha, mapping, order, merge, sym, D_total, curpath = '', muDs=[0, 10000], max2 = 4, max1 = 256, sites = [], Hdebug = False, rtype = 'sin-transform', Lambda = None, **config_kwargs):
 
     print("init config: ", config_kwargs)
 
@@ -86,7 +86,7 @@ def initial_state(NW, NS, U, muL, muR, vS0, alpha, mapping, order, merge, sym, D
     else:
         raise ValueError("Only sym = 'U1' or 'Z2' suported.")
 
-    H0, M = Hamiltonian(mapping)(NW, NS, muL, muR, muDs, vS0, U * (2 * alpha - 1), Hdebug = Hdebug, sym=sym, order=sites, **config_kwargs)
+    H0, M = Hamiltonian(mapping)(NW, NS, muL, muR, muDs, vS0, U * (2 * alpha - 1), Hdebug = Hdebug, sym=sym, order=sites, rtype = rtype, Lambda = Lambda, **config_kwargs)
     qI, qc, qcp, qn, dx, dn1, dn2, dI, m12, m21 = local_operators(sym=sym, **config_kwargs)
 
     if Hdebug:
@@ -143,7 +143,7 @@ def initial_state(NW, NS, U, muL, muR, vS0, alpha, mapping, order, merge, sym, D
 
 
 def run_evolution(psi, NW, NS, U, muL, muR, vS0, vS1, mapping, order, merge, sym, D_total, tswitch, tfin, dt, lasttime = -1, 
-                  muDs=[0.0, 0.0], curpath = '', verbose=0, tdvptol = 1e-8, sites = [], Hdebug = False, **config_kwargs):
+                  muDs=[0.0, 0.0], curpath = '', verbose=0, tdvptol = 1e-8, sites = [], Hdebug = False, rtype = 'sin-transform', Lambda = None, **config_kwargs):
 
     
     print("dynamics config: ", config_kwargs)
@@ -171,13 +171,13 @@ def run_evolution(psi, NW, NS, U, muL, muR, vS0, vS1, mapping, order, merge, sym
     for t0, t1, stage in [(0, tswitch, 1), (tswitch, tfin, 2)]:
 
         if stage == 1:
-            H, M = Hamiltonian(mapping)(NW, NS, muL, muR, muDs, vS0, U, sym=sym, Hdebug = Hdebug, order=sites, **config_kwargs)
+            H, M = Hamiltonian(mapping)(NW, NS, muL, muR, muDs, vS0, U, sym=sym, Hdebug = Hdebug, order=sites, rtype = rtype, Lambda = Lambda, **config_kwargs)
             if Hdebug:
                 with open(f'{curpath}HamT1', 'w') as f:
                     np.savetxt(f, M, fmt = '%s')
 
         else:
-            H, M = Hamiltonian(mapping)(NW, NS, muL, muR, muDs, vS1, U, sym=sym, Hdebug = Hdebug, order=sites, **config_kwargs)
+            H, M = Hamiltonian(mapping)(NW, NS, muL, muR, muDs, vS1, U, sym=sym, Hdebug = Hdebug, order=sites, rtype = rtype, Lambda = Lambda, **config_kwargs)
             if Hdebug:
                 with open(f'{curpath}HamT2', 'w') as f:
                     np.savetxt(f, M, fmt = '%s')
@@ -303,6 +303,8 @@ def singlerun(para, config_kwargs):
     max2 = int(para["max2"])
     max1 = int(para["max1"])
     finaltol = float(para['finaltol'])
+    rtype = para['rtype'] if 'rtype' in para else 'sin-transform'
+    Lambda = float(para['Lambda']) if 'Lambda' in para else None
 
     new = alpha
     tdvptol = 1e-6
@@ -343,9 +345,9 @@ def singlerun(para, config_kwargs):
         # no time file, starting new!
         else:
             fprint("Starting new")
-            sites = order_sites(mapping, order, L, NS=NS, muL = muL, muR = muR)
+            sites = order_sites(mapping, order, L, NS=NS, muL = muL, muR = muR, rtype = rtype, Lambda = Lambda)
 
-            psi0 , _ = initial_state(L, NS, U, 0.0, 0.0, 0, alpha, mapping, order, merge, sym, D, curpath=curpath, max1 = max1, max2 = max2, sites = sites, **config_kwargs)
+            psi0 , _ = initial_state(L, NS, U, 0.0, 0.0, 0, alpha, mapping, order, merge, sym, D, curpath=curpath, max1 = max1, max2 = max2, sites = sites,  rtype = rtype, Lambda = Lambda, **config_kwargs)
 
             if config_kwargs['backend'] == 'torch':
                 gpu_report('DMRG')
@@ -353,7 +355,7 @@ def singlerun(para, config_kwargs):
             lasttime = 0.0
 
         run_evolution(psi0, L, NS, U, muL, muR, 0, vs, mapping, order, merge, sym, D, tswitch, tfin, dt, 
-                      lasttime = lasttime, curpath = curpath, tdvptol= tdvptol, verbose=0, sites = sites, **config_kwargs)
+                      lasttime = lasttime, curpath = curpath, tdvptol= tdvptol, verbose=0, sites = sites,  rtype = rtype, Lambda = Lambda, **config_kwargs)
 
         n1 = np.loadtxt(f'{curpath}/n1')
         new = np.mean( n1[-8:])
@@ -368,134 +370,134 @@ def singlerun(para, config_kwargs):
     return False, new - alpha
 
 
-def singlerun_binary_search(para, config_kwargs):
+# def singlerun_binary_search(para, config_kwargs):
 
 
-    L = int(para['L'])
-    NS = 4
-    U = float(para['U'])
-    muL = float(para['biasLR'])
-    muR = -float(para['biasLR'])
-    #alpha = float(para['n1init'])
-    lo = float(para["lo"])
-    hi = float(para["hi"])
-    mixed = bool(para['mixed'])
-    merge = bool(para["merge"])
-    mapping = 'mixed' if mixed else 'position'
-    sym = 'U1'
-    n1init = float(para["n1init"])
-    order = para['order']
-    D = int(para['TEdim'])
-    vs = float(para['vs'])
-    dt = float(para['timestep'])
-    tswitch = float(para['tswitch'])
-    tfin = float(para['tfin'])
-    repeat = int(para['repeat'])
-    max2 = int(para["max2"])
-    max1 = int(para["max1"])
-    finaltol = float(para['finaltol'])
+#     L = int(para['L'])
+#     NS = 4
+#     U = float(para['U'])
+#     muL = float(para['biasLR'])
+#     muR = -float(para['biasLR'])
+#     #alpha = float(para['n1init'])
+#     lo = float(para["lo"])
+#     hi = float(para["hi"])
+#     mixed = bool(para['mixed'])
+#     merge = bool(para["merge"])
+#     mapping = 'mixed' if mixed else 'position'
+#     sym = 'U1'
+#     n1init = float(para["n1init"])
+#     order = para['order']
+#     D = int(para['TEdim'])
+#     vs = float(para['vs'])
+#     dt = float(para['timestep'])
+#     tswitch = float(para['tswitch'])
+#     tfin = float(para['tfin'])
+#     repeat = int(para['repeat'])
+#     max2 = int(para["max2"])
+#     max1 = int(para["max1"])
+#     finaltol = float(para['finaltol'])
 
 
-    tdvptol = 1e-6
-    for i in range(repeat):
+#     tdvptol = 1e-6
+#     for i in range(repeat):
 
-        fprint(f"repeat: {i}")
+#         fprint(f"repeat: {i}")
 
-        curpath = f'{getcwd()}/bs_repeat{i}_lo{lo}_hi{hi}/'
+#         curpath = f'{getcwd()}/bs_repeat{i}_lo{lo}_hi{hi}/'
 
-        if not os.path.isdir(curpath):
-            mkdir(curpath)
+#         if not os.path.isdir(curpath):
+#             mkdir(curpath)
 
-        if os.path.isfile( f'{curpath}times'):
+#         if os.path.isfile( f'{curpath}times'):
 
-            lasttime = np.loadtxt( f'{curpath}times', ndmin = 1)[-1]
-            sites = np.loadtxt( f'{curpath}sites', dtype = 'str')
+#             lasttime = np.loadtxt( f'{curpath}times', ndmin = 1)[-1]
+#             sites = np.loadtxt( f'{curpath}sites', dtype = 'str')
 
-            print(sites)
+#             print(sites)
 
-            # finish!
-            if lasttime == tfin:
-                fprint( f"iter {i} exists, skip!")
-                #alpha = np.mean(np.loadtxt( f'{curpath}n1')[-8:])
-                lo = np.loadtxt( f'{curpath}lo')
-                hi = np.loadtxt( f'{curpath}hi')
-                #points = [lo, hi]
+#             # finish!
+#             if lasttime == tfin:
+#                 fprint( f"iter {i} exists, skip!")
+#                 #alpha = np.mean(np.loadtxt( f'{curpath}n1')[-8:])
+#                 lo = np.loadtxt( f'{curpath}lo')
+#                 hi = np.loadtxt( f'{curpath}hi')
+#                 #points = [lo, hi]
 
-                #lo = min(points)
-                #hi = max(points)
+#                 #lo = min(points)
+#                 #hi = max(points)
                 
-                fprint( f"current lo = {lo}, hi = {hi}")
-                continue
+#                 fprint( f"current lo = {lo}, hi = {hi}")
+#                 continue
             
-            # we continue
-            else:
+#             # we continue
+#             else:
 
-                try:
-                    psi0 = load_psi(f'{curpath}TDVPlast.npy', sym, message="Loading last", **config_kwargs)
-                except:
-                    psi0 = load_psi(f'{curpath}TDVPlastback.npy', sym, message="Loading last backup", **config_kwargs)
+#                 try:
+#                     psi0 = load_psi(f'{curpath}TDVPlast.npy', sym, message="Loading last", **config_kwargs)
+#                 except:
+#                     psi0 = load_psi(f'{curpath}TDVPlastback.npy', sym, message="Loading last backup", **config_kwargs)
             
-        # no time file, starting new!
-        else:
-            fprint("Starting new")
+#         # no time file, starting new!
+#         else:
+#             fprint("Starting new")
 
-            if i == 0:
-                alpha = n1init
-            else:
-                alpha = (lo + hi) / 2
+#             if i == 0:
+#                 alpha = n1init
+#             else:
+#                 alpha = (lo + hi) / 2
 
-            sites = order_sites(mapping, order, L, NS=NS, muL = muL, muR = muR)
+#             sites = order_sites(mapping, order, L, NS=NS, muL = muL, muR = muR)
 
-            psi0 , _ = initial_state(L, NS, U, 0.0, 0.0, 0, alpha, mapping, order, merge, sym, D, curpath=curpath, max1 = max1, max2 = max2, sites = sites, **config_kwargs)
+#             psi0 , _ = initial_state(L, NS, U, 0.0, 0.0, 0, alpha, mapping, order, merge, sym, D, curpath=curpath, max1 = max1, max2 = max2, sites = sites, **config_kwargs)
 
-            if config_kwargs['backend'] == 'torch':
-                gpu_report('DMRG')
+#             if config_kwargs['backend'] == 'torch':
+#                 gpu_report('DMRG')
 
-            lasttime = 0.0
+#             lasttime = 0.0
         
-        if i == 0:
-            alpha = n1init
-        else:
-            alpha = (lo + hi) / 2
+#         if i == 0:
+#             alpha = n1init
+#         else:
+#             alpha = (lo + hi) / 2
 
-        run_evolution(psi0, L, NS, U, muL, muR, 0, vs, mapping, order, merge, sym, D, tswitch, tfin, dt, 
-                      lasttime = lasttime, curpath = curpath, tdvptol= tdvptol, verbose=0, sites = sites, **config_kwargs)
+#         run_evolution(psi0, L, NS, U, muL, muR, 0, vs, mapping, order, merge, sym, D, tswitch, tfin, dt, 
+#                       lasttime = lasttime, curpath = curpath, tdvptol= tdvptol, verbose=0, sites = sites, **config_kwargs)
 
-        n1 = np.loadtxt(f'{curpath}/n1')
-        new = np.mean( n1[-8:])
+#         n1 = np.loadtxt(f'{curpath}/n1')
+#         new = np.mean( n1[-8:])
 
-        fprint("new n1 last: ", new)
+#         fprint("new n1 last: ", new)
 
-        if np.abs(new - alpha) < finaltol:
-            fprint("final tol ", np.abs(new - alpha))
-            #np.savetxt( f'{curpath}TOL_REACHED', [])
-            np.savetxt( f'{getcwd()}/TOL_REACHED', [])
-            return True
+#         if np.abs(new - alpha) < finaltol:
+#             fprint("final tol ", np.abs(new - alpha))
+#             #np.savetxt( f'{curpath}TOL_REACHED', [])
+#             np.savetxt( f'{getcwd()}/TOL_REACHED', [])
+#             return True
         
-        # determine condition for choosing interval
+#         # determine condition for choosing interval
         
-        # choose lower
-        if new < alpha :
+#         # choose lower
+#         if new < alpha :
 
-            points = [lo, new]
-            lo = min(points)
-            hi = max(points)
+#             points = [lo, new]
+#             lo = min(points)
+#             hi = max(points)
 
-        # choose higher
-        else:
+#         # choose higher
+#         else:
 
-            points = [new, hi]
-            lo = min(points)
-            hi = max(points)
-
-
-        np.savetxt( f'{curpath}lo', [lo], fmt = '%.7f')
-        np.savetxt( f'{curpath}hi', [hi], fmt = '%.7f')
+#             points = [new, hi]
+#             lo = min(points)
+#             hi = max(points)
 
 
+#         np.savetxt( f'{curpath}lo', [lo], fmt = '%.7f')
+#         np.savetxt( f'{curpath}hi', [hi], fmt = '%.7f')
 
 
-    return None
+
+
+#     return None
 
 
 
@@ -539,6 +541,7 @@ if __name__ == '__main__':
 
     elif mode == 'binarysearch':
         fprint("BINARY SEARCH")
+        raise NotImplementedError("Binary search currently unavailable. Please use iterative mode.")
 
         # temppara = deepcopy(para)
         # temppara["repeat"] = 1

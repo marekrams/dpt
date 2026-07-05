@@ -104,7 +104,9 @@ def gen_dpt_cluster(categories : dict, toplevel = ''):
         "max1" : 256,
         "max2" : 64,
         "merge" : True,
-        "finaltol" : 1e-5
+        "finaltol" : 1e-5,
+        "rtype" : "sin-transform",
+        "Lambda" : None
     }
     keys = list(categories.keys())
     prods = product(*categories.values())
@@ -834,11 +836,11 @@ def onepass_bias():
 
 def onepass_nobias():
 
-    Ls = [1024]
-    dims = [128]
+    Ls = [128]
+    dims = [128, 256]
 
     repeat = 1
-    vss  = [3/4]
+    vss  = [1/8, 1/4]
     taus = [1/8]
     merge = [True]
 
@@ -850,7 +852,8 @@ def onepass_nobias():
 
         for _, bias in enumerate(biases):
 
-            Us = np.linspace(3.4, 3.5, 30) #U_determine(L, bias, 'prodApr9testbias')
+            #Us = np.linspace(3.4, 3.5, 30) 
+            Us = np.linspace(2.0, 5.0, 50)
 
             print(Us)
             #tfin = L * 0.9
@@ -950,6 +953,68 @@ def onepass_nobias():
 #                     gen_dpt_cluster(dpt_single)
 
 
+def onepass_nobias_testlog():
+
+    Ls = [128]
+    dims = [128, 256]
+
+    repeat = 1
+    vss  = [3/4]
+    taus = [1/8]
+    merge = [True]
+
+    for _, L in enumerate(Ls):
+
+        biases = [0.0,
+              ]
+
+
+        for _, bias in enumerate(biases):
+
+            Us = np.linspace(3.1, 3.8, 50)
+
+            print(Us)
+            #tfin = L * 0.9
+            tfin = L * 7/8
+            #tfin = L * 15/16
+
+            #Us = U_determine(L, bias)
+
+            for tswitch in [#tfin/4,
+                            0
+                            #tfin/2
+                            ]:
+
+                for k, U in enumerate(Us):
+
+                    dpt_single = {
+                        "U": [U],
+                        "L" : [L],
+                        "tfin" : [tfin],
+                        "TEdim": dims,
+                        "mixed": [True],
+                        "vs" : vss,
+                        "merge" : merge,
+                        "biasLR" : [bias],
+                        "n1init" : [1.0],
+                        #"lo" : [0.5],
+                        #"hi" : [1.0],
+                        "tswitch" : [tswitch],
+                        "timestep": taus,
+                        "order" : [ 'LSDSR'],
+                        "repeat" : [repeat],
+                        "rtype" : ["log"],
+                        "Lambda" : [1.2, 1.5],
+                        "searchmode" : ['iterative'],
+                        "finaltol" : [
+                            #1e-3,
+                            1e-5]
+                    }
+
+                    #print( dpt_single["U"], dpt_single["n1init"])
+                    gen_dpt_cluster(dpt_single)
+
+
 
 if __name__ == '__main__':
     
@@ -969,8 +1034,9 @@ if __name__ == '__main__':
     #DPT_yastn()
     #DPT_bias_test()
     #DPT_bias_bs()
-    bench_basis()
+    #bench_basis()
     #onepass_bias()
+    onepass_nobias()
     #DPT_nobias_bs()
     #bias_determine()
     #changerepeat()
