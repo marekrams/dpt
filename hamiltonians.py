@@ -166,6 +166,7 @@ def Hamiltonian_dpt_momentum(NW, NS, muL, muR, muDs, vS, U, w0=1, order=[], sym=
 def Hamiltonian_dpt_mixed(NW, NS, muL, muR, muDs, vS, U, w0=1, order = [], sym='U1', Hdebug = False, rtype = 'sin-transform', Lambda = None, **config_kwargs):
     """ generate mpo for dpt model in mixed basis """
 
+    #print("rtype: ", rtype, "Lambda: ", Lambda)
     qI, qc, qcp, qn, dx, dn1, dn2, dI, m12, m21 = local_operators(sym=sym, **config_kwargs)
     #
     vL = vR = vLR = w0

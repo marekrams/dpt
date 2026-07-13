@@ -23,17 +23,18 @@ def vwk(k, NW, mu, vLR, rtype = 'sin-transform', Lambda = None):
     """ generate the coupling for the momentum basis """
     NW1 = NW + 1
 
+
     if rtype == 'sin-transform':
         w = mu + 2 * vLR * np.cos(np.pi * k / NW1)
         v = vLR * np.sin(np.pi * k / NW1) * np.sqrt(2 / NW1)
 
     elif rtype == 'log':
-        if Lambda is None:
-            raise ValueError("For log discretization, Lambda must be specified.")
+        assert Lambda is not None, "For log discretization, Lambda must be specified."
+        assert Lambda > 1, "Lambda > 1"
         
-        sgn = np.sign(  k - NW//2 - 1/2)
+        sgn = -np.sign(  k - NW//2 - 1/2)
         effk = k if k <= NW//2 else NW1 - k
-        w = mu + 2 * vLR * sgn * Lambda ** ( - effk - 1/2)
+        w = mu + 2 * vLR * sgn * Lambda ** ( - effk + 1/2)
         v = vLR * np.sqrt( 2 / np.pi * ( 1 - 1/Lambda ) * Lambda ** ( - effk))
     
     else:

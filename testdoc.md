@@ -1,3 +1,6 @@
+# run has final energy: -22.334022359601594
+# paras:
+
 {
     "U": 3.8,
     "L": 128,
@@ -22,3 +25,4 @@
     "rtype": "log",
     "Lambda": 1.2
 }
+

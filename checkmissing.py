@@ -1,7 +1,9 @@
 import subprocess
 from glob import glob
-from os import getcwd, path
+from os import getcwd, path, remove
 import numpy as np
+import json
+import shutil
 
 
 def searchkey(needle, haystack : str, default_key = None, whichseg = -1, default_value = '', func = lambda x: x)  : 
@@ -19,10 +21,10 @@ def searchkey(needle, haystack : str, default_key = None, whichseg = -1, default
         if default_key is not None :
             return func(searchkey(default_key, haystack))
         
-        return func(default_value)
+        return default_value
     except:
         print(needle)
-        print("Have you checked needle and haystack?")
+        raise ValueError("Have you checked needle and haystack?")
 
 # check if the jobs are still running by checking the slurm output, if not, print out the terminated ones
 def check_missing(default = "U*"):
@@ -68,6 +70,28 @@ def check_missing(default = "U*"):
     np.savetxt( f'{pwd}/TERMINATEDDIR', list(terminateddir), fmt = '%s')
 
 
+
+def changetime():
+
+    fs = glob( f'{getcwd()}/U*Lambda*')
+    for f in fs:
+
+        U = searchkey('U', f, func = float)
+
+        if U < 3.5:
+            with open(f'{f}/dptpara.json', 'r') as infile:
+                para = json.load(infile)
+
+            new = para
+            new['tfin'] = 256
+
+            with open(f'{f}/dptpara.json', 'w') as out:
+                json.dump(new, out, indent = 4)
+
+            remove( f'{f}/CALC_FIN')
+
+
+
 # we strictly need n1 to run to full
 def check_TOL(default = "U*"):
 
@@ -99,5 +123,6 @@ def check_TOL(default = "U*"):
             np.savetxt(f'{f}/TOL_REACHED', [])
 
 if __name__ == '__main__':
-    check_missing(default = "*dim1024*")
+    #check_missing(default = "*dim1024*")
     #check_TOL()
+    changetime()

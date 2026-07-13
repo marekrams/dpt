@@ -280,7 +280,7 @@ def run_evolution(psi, NW, NS, U, muL, muR, vS0, vS1, mapping, order, merge, sym
 
 
 
-def singlerun(para, config_kwargs):
+def singlerun(para: dict, config_kwargs):
 
 
     L = int(para['L'])
@@ -303,8 +303,9 @@ def singlerun(para, config_kwargs):
     max2 = int(para["max2"])
     max1 = int(para["max1"])
     finaltol = float(para['finaltol'])
-    rtype = para['rtype'] if 'rtype' in para else 'sin-transform'
-    Lambda = float(para['Lambda']) if 'Lambda' in para else None
+    rtype = para.get('rtype', 'sin-transform')
+    Lambda = para.get('Lambda', None)
+
 
     new = alpha
     tdvptol = 1e-6

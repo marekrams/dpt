@@ -1016,6 +1016,72 @@ def onepass_nobias_testlog():
 
 
 
+
+def onepass_nobias_completion_logsine():
+
+    Ls = [128]
+
+    repeat = 1
+    vss  = [3/4]
+    taus = [1/8]
+    merge = [True]
+
+    for _, L in enumerate(Ls):
+
+        biases = [0.0,
+              ]
+
+
+        for _, bias in enumerate(biases):
+
+            Us = np.linspace(2.6, 3.1, 35, endpoint = False)
+
+            print(Us)
+            #tfin = L * 0.9
+            tfin = L * 7/8
+            #tfin = L * 15/16
+
+            #Us = U_determine(L, bias)
+
+            for tswitch in [#tfin/4,
+                            0
+                            #tfin/2
+                            ]:
+
+                for k, U in enumerate(Us):
+
+                    dpt_single = {
+                        "U": [U],
+                        "L" : [L],
+                        "tfin" : [tfin],
+                        "TEdim": [128],
+                        "mixed": [True],
+                        "vs" : vss,
+                        "merge" : merge,
+                        "biasLR" : [bias],
+                        "n1init" : [1.0],
+                        #"lo" : [0.5],
+                        #"hi" : [1.0],
+                        "tswitch" : [tswitch],
+                        "timestep": taus,
+                        "order" : [ 'LSDSR'],
+                        "repeat" : [repeat],
+                        "searchmode" : ['iterative'],
+                        "finaltol" : [
+                            #1e-3,
+                            1e-5]
+                    }
+
+                    #print( dpt_single["U"], dpt_single["n1init"])
+                    gen_dpt_cluster(dpt_single)
+
+                    dpt_single['rtype'] = ['log']
+                    dpt_single['Lambda'] = [1.2, 1.5]
+                    dpt_single['TEdim'] = [128, 256]
+
+                    gen_dpt_cluster(dpt_single)
+
+
 if __name__ == '__main__':
     
 
@@ -1036,7 +1102,8 @@ if __name__ == '__main__':
     #DPT_bias_bs()
     #bench_basis()
     #onepass_bias()
-    onepass_nobias()
+    #onepass_nobias()
+    onepass_nobias_completion_logsine()
     #DPT_nobias_bs()
     #bias_determine()
     #changerepeat()
