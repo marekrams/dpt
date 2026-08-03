@@ -103,6 +103,7 @@ def gen_dpt_cluster(categories : dict, toplevel = ''):
         "searchmode" : "iterative",
         "max1" : 256,
         "max2" : 64,
+        "SB" : 0.0,
         "merge" : True,
         "finaltol" : 1e-5,
         "rtype" : "sin-transform",
@@ -837,12 +838,13 @@ def onepass_bias():
 def onepass_nobias():
 
     Ls = [128]
-    dims = [128, 256]
+    dims = [128]
 
     repeat = 1
-    vss  = [1/8, 1/4]
+    vss  = [1/8, 3/4]
     taus = [1/8]
     merge = [True]
+    SBs = [-0.1, -0.05, -0.01, -0.005]
 
     for _, L in enumerate(Ls):
 
@@ -853,7 +855,7 @@ def onepass_nobias():
         for _, bias in enumerate(biases):
 
             #Us = np.linspace(3.4, 3.5, 30) 
-            Us = np.linspace(2.0, 5.0, 50)
+            Us = np.linspace(2, 4, 20)
 
             print(Us)
             #tfin = L * 0.9
@@ -883,6 +885,7 @@ def onepass_nobias():
                         #"hi" : [1.0],
                         "tswitch" : [tswitch],
                         "timestep": taus,
+                        "SB" : SBs,
                         "order" : [ 'LSDSR'],
                         "repeat" : [repeat],
                         "searchmode" : ['iterative'],
@@ -955,7 +958,7 @@ def onepass_nobias():
 
 def onepass_nobias_testlog():
 
-    Ls = [128]
+    Ls = [64, 256]
     dims = [128, 256]
 
     repeat = 1
@@ -971,11 +974,11 @@ def onepass_nobias_testlog():
 
         for _, bias in enumerate(biases):
 
-            Us = np.linspace(3.1, 3.8, 50)
+            Us = np.linspace(2.6, 3.8, 85)
 
             print(Us)
             #tfin = L * 0.9
-            tfin = L * 7/8
+            tfin = L * 3
             #tfin = L * 15/16
 
             #Us = U_determine(L, bias)
@@ -1004,7 +1007,7 @@ def onepass_nobias_testlog():
                         "order" : [ 'LSDSR'],
                         "repeat" : [repeat],
                         "rtype" : ["log"],
-                        "Lambda" : [1.2, 1.5],
+                        "Lambda" : [1.1, 1.2],
                         "searchmode" : ['iterative'],
                         "finaltol" : [
                             #1e-3,
@@ -1103,7 +1106,9 @@ if __name__ == '__main__':
     #bench_basis()
     #onepass_bias()
     #onepass_nobias()
-    onepass_nobias_completion_logsine()
+    #onepass_nobias()
+    onepass_nobias_testlog()
+    #onepass_nobias_completion_logsine()
     #DPT_nobias_bs()
     #bias_determine()
     #changerepeat()

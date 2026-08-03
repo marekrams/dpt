@@ -151,7 +151,6 @@ def run_evolution(psi, NW, NS, U, muL, muR, vS0, vS1, mapping, order, merge, sym
     total = 0
     cnt = 0
 
-
     qI, qc, qcp, qn, dx, dn1, dn2, dI, m12, m21 = local_operators(sym=sym, **config_kwargs)
     s2i = {s: i for i, s in enumerate(sites)}
     On1 = merge_sites(op1site(dn1, 'D1', s2i, qI, dI), s2i, merge)
@@ -291,6 +290,7 @@ def singlerun(para: dict, config_kwargs):
     alpha = float(para['n1init'])
     mixed = bool(para['mixed'])
     merge = bool(para["merge"])
+    SB = float(para.get('SB', 0.0))
     mapping = 'mixed' if mixed else 'position'
     sym = 'U1'
     order = para['order']
@@ -306,7 +306,7 @@ def singlerun(para: dict, config_kwargs):
     rtype = para.get('rtype', 'sin-transform')
     Lambda = para.get('Lambda', None)
 
-
+    muDs = [SB, 0.0]
     new = alpha
     tdvptol = 1e-6
     for i in range(repeat):
@@ -356,7 +356,7 @@ def singlerun(para: dict, config_kwargs):
             lasttime = 0.0
 
         run_evolution(psi0, L, NS, U, muL, muR, 0, vs, mapping, order, merge, sym, D, tswitch, tfin, dt, 
-                      lasttime = lasttime, curpath = curpath, tdvptol= tdvptol, verbose=0, sites = sites,  rtype = rtype, Lambda = Lambda, **config_kwargs)
+                      lasttime = lasttime, curpath = curpath, tdvptol= tdvptol, verbose=0, sites = sites,  rtype = rtype, Lambda = Lambda, muDs = muDs, **config_kwargs)
 
         n1 = np.loadtxt(f'{curpath}/n1')
         new = np.mean( n1[-8:])
