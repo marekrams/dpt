@@ -837,14 +837,14 @@ def onepass_bias():
 
 def onepass_nobias():
 
-    Ls = [128]
-    dims = [128]
+    Ls = [64, 128, 256]
+    dims = [64, 128, 256]
 
     repeat = 1
-    vss  = [1/8, 3/4]
+    vss  = [3/4]
     taus = [1/8]
     merge = [True]
-    SBs = [-0.1, -0.05, -0.01, -0.005]
+    SBs = [0.0] #[-0.1, -0.05, -0.01, -0.005]
 
     for _, L in enumerate(Ls):
 
@@ -854,8 +854,8 @@ def onepass_nobias():
 
         for _, bias in enumerate(biases):
 
-            #Us = np.linspace(3.4, 3.5, 30) 
-            Us = np.linspace(2, 4, 20)
+            Us = np.arange(2.5, 4.0, 1/40) 
+            #Us = np.linspace(2, 4, 20)
 
             print(Us)
             #tfin = L * 0.9
@@ -1107,7 +1107,7 @@ if __name__ == '__main__':
     #onepass_bias()
     #onepass_nobias()
     #onepass_nobias()
-    onepass_nobias_testlog()
+    onepass_nobias()
     #onepass_nobias_completion_logsine()
     #DPT_nobias_bs()
     #bias_determine()
