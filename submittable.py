@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import yastn.tn.mps as mps
 import json
-from hamiltonians import local_operators, Hamiltonian_dpt_position, Hamiltonian_dpt_momentum, Hamiltonian_dpt_mixed
+from hamiltonians import local_operators, Hamiltonian_dpt_position, Hamiltonian_dpt_momentum, Hamiltonian_dpt_mixed, imaginary_time_evolution
 from auxilliary import merge_sites, op1site, get_current, gpu_report
 from sites import L, S, D, R, order_sites
 from os import getcwd, mkdir
@@ -63,7 +63,7 @@ def init_occupations(mapping, NW, NS):
     return occ
 
 
-def initial_state(NW, NS, U, muL, muR, vS0, alpha, mapping, order, merge, sym, D_total, curpath = '', muDs=[0, 10000], max2 = 4, max1 = 256, sites = [], Hdebug = False, rtype = 'sin-transform', Lambda = None, **config_kwargs):
+def initial_state(NW, NS, U, muL, muR, vS0, alpha, mapping, order, merge, sym, D_total, curpath = '', muDs=[0, 10000], max2 = 4, max1 = 256, sites = [], Hdebug = False, rtype = 'sin-transform', Lambda = None, imaginary_time = False, **config_kwargs):
 
     print("init config: ", config_kwargs)
 
@@ -92,12 +92,16 @@ def initial_state(NW, NS, U, muL, muR, vS0, alpha, mapping, order, merge, sym, D
     if Hdebug:
         with open(f'{curpath}HamInit', 'w') as f:
             np.savetxt(f, M, fmt = '%s')
-    
+
     psi = mps.random_mps(H0, n=n_profile, D_total=D_total, sigma=2, distribution='normal')
 
     H0 = merge_sites(H0, s2i, merge)
     psi = merge_sites(psi, s2i, merge)
     psi.canonize_(to='last').canonize_(to='first')
+
+
+    if imaginary_time:
+        psi = imaginary_time_evolution(D_total, psi, H0)
 
     #info = mps.dmrg_(psi, H0, method='1site', max_sweeps=8, Schmidt_tol=1e-12)
     #fprint(info)

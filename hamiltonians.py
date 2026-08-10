@@ -8,6 +8,51 @@ from pprint import pprint
 
 
 
+def imaginary_time_evolution(D, psi, H0):
+
+    opts_expmv = {
+        "hermitian": True,
+        "tol": 1e-12,
+    }
+
+    opts_svd = {
+        "tol": 1e-12,
+        "D_total": D,
+    }
+
+    beta_max = 20.0
+    beta_check = 0.5
+    betas = tuple(np.arange(0.0, beta_max + beta_check / 2, beta_check))
+
+    print("IMAGINARY TIME EVOLUTION START:")
+    E_prev = None
+
+    for step in mps.tdvp_(
+        psi,
+        H0,                         # pass the static MPO directly
+        times=betas,
+        dt=0.05,
+        u=1,                        # imaginary time: exp(-beta H0)
+        method="2site",
+        order="2nd",
+        opts_expmv=opts_expmv,
+        opts_svd=opts_svd,
+        normalize=True,
+        subtract_E=True,
+        precompute=False,
+    ):
+        E = mps.measure_mpo(psi, H0, psi).real
+        print(step.tf, E)
+
+        if E_prev is not None:
+            dE = abs(E - E_prev) / max(1.0, abs(E))
+            if dE < 1e-10:
+                break
+
+        E_prev = E
+
+    return psi
+
 def  local_operators(sym='U1', **config_kwargs):
     ops = yastn.operators.SpinlessFermions(sym=sym, **config_kwargs)
     qI, qc, qcp, qn = ops.I(), ops.c(), ops.cp(), ops.n()
