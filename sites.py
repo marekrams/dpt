@@ -35,7 +35,7 @@ def vwk(k, NW, mu, vLR, rtype = 'sin-transform', Lambda = None):
         sgn = -np.sign(  k - NW//2 - 1/2)
         effk = k if k <= NW//2 else NW1 - k
         w = mu + 2 * vLR * sgn * Lambda ** ( - effk + 1/2)
-        v = vLR * np.sqrt( 2 / np.pi * ( 1 - 1/Lambda ) * Lambda ** ( - effk))
+        v = vLR * np.sqrt( 2 / np.pi * ( 1 - 1/Lambda ) * Lambda ** ( - effk + 1))
     
     else:
         raise ValueError("rtype should be 'sin-transform' or 'log'.")
