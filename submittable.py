@@ -93,7 +93,7 @@ def initial_state(NW, NS, U, muL, muR, vS0, alpha, mapping, order, merge, sym, D
         with open(f'{curpath}HamInit', 'w') as f:
             np.savetxt(f, M, fmt = '%s')
 
-    psi = mps.random_mps(H0, n=n_profile, D_total=D_total, sigma=2, distribution='normal')
+    psi = mps.random_mps(H0, n=n_profile, D_total=16, sigma=1, distribution='normal')
 
     H0 = merge_sites(H0, s2i, merge)
     psi = merge_sites(psi, s2i, merge)
