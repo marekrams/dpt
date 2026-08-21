@@ -837,8 +837,8 @@ def onepass_bias():
 
 def onepass_nobias():
 
-    Ls = [64, 128, 256]
-    dims = [64, 128, 256]
+    Ls = [64, 128, 256, 512, 1024]
+    dims = [64]
 
     repeat = 1
     vss  = [3/4]
@@ -854,15 +854,10 @@ def onepass_nobias():
 
         for _, bias in enumerate(biases):
 
-            Us = np.arange(2.5, 4.0, 1/40) 
-            #Us = np.linspace(2, 4, 20)
+            #Us = np.arange(2.5, 4.0, 1/40) 
+            Us = np.linspace(2.5, 4, 60)
 
-            print(Us)
-            #tfin = L * 0.9
-            tfin = L * 7/8
-            #tfin = L * 15/16
-
-            #Us = U_determine(L, bias)
+            tfin = (L + 1) / 2 / np.pi
 
             for tswitch in [#tfin/4,
                             0
@@ -876,7 +871,7 @@ def onepass_nobias():
                         "L" : [L],
                         "tfin" : [tfin],
                         "TEdim": dims,
-                        "mixed": [True],
+                        "mixed": [False],
                         "vs" : vss,
                         "merge" : merge,
                         "biasLR" : [bias],
