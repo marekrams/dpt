@@ -75,7 +75,6 @@ def Hamiltonian_dpt_position(NW, NS, muL, muR, muDs, vS, U, w0=1, order=[], sym=
     """ generate MPO for DPT in position basis. first dot is interacting with 4 sites """
     #
     qI, qc, qcp, qn, dx, dn1, dn2, dI, m12, m21 = local_operators(sym=sym, **config_kwargs)
-    NS = 4
     #
     vL = vR = vLR = w0
     #
