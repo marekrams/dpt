@@ -72,18 +72,22 @@ def order_sites(mapping, order, NW, NS=4, muL =0.0, muR = 0.0, vL = 1.0, vR = 1.
             sites += [L(k) for k in range(NW, 0, -1)]  # 'L1' is for L mode at the junction
             sites += S_sites(NS)  # 'S1' connected to L1
             sites += [R(k) for k in range(1, NW + 1)]  # 'R1' is for R mode at the junction
+        elif order == 'SDSLR':
+            sites = SDS_sites(NS)  # 'S1' connected to L1
+            sites += [L(k) for k in range(NW, 0, -1)]  # 'L1' is for L mode at the junction
+            sites += [R(k) for k in range(1, NW + 1)]  # 'R1' is for R mode at the junction
         elif order == 'LSDSR':
             sites =  [L(k) for k in range(NW, 0, -1)]  # 'L1' is for L mode at the junction
             sites += SDS_sites(NS)
             sites += [R(k) for k in range(1, NW + 1)]  # 'R1' is for R mode at the junction
         else:
-            raise ValueError("For mapping='position' select order from 'DLSR', LSDSR'.")
+            raise ValueError("For mapping='position' select order from 'DLSR', LSDSR', 'SDSLR'")
         return sites
 
     if mapping == 'mixed':
-        if order in ['DLSR', 'LSDSR']:
+        if order in ['DLSR', 'LSDSR', 'SDSLR']:
             return order_sites('position', order, NW, NS = NS)
-        if order in ['LRSDSLR', 'DLRSLR']:
+        if order in ['LRSDSLR', 'DLRSLR', 'SDSLRLR']:
             # sites = []
             # for k in range(1, NW + 1):
             #     sites.append(L(k))
@@ -91,10 +95,12 @@ def order_sites(mapping, order, NW, NS=4, muL =0.0, muR = 0.0, vL = 1.0, vR = 1.
             sites = mixed_order(NW, muL, muR, vL, vR, rtype = rtype, Lambda = Lambda)
             if order == 'LRSDSLR':
                 return sites[:NW] + SDS_sites(NS) + sites[NW:]
+            if order == 'SDSLRLR':
+                return SDS_sites(NS) + sites
             if order == 'DLRSLR':
                 return [D(1)] + sites[:NW] + S_sites(NS) + sites[NW:]
         else:
-            raise ValueError("For 'mixed' select order from 'DLSR', LSDSR', 'LRSDSLR', 'DLRSLR'.")
+            raise ValueError("For 'mixed' select order from 'DLSR', LSDSR', 'SDSLR', 'SDSLRLR', 'LRSDSLR', 'DLRSLR'.")
 
     if mapping == 'momentum':
         if order == 'LDR':

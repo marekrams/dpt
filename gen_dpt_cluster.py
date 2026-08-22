@@ -145,6 +145,10 @@ def gen_dpt_cluster(categories : dict, toplevel = ''):
         if not os.path.exists(string):
             os.mkdir(string)
 
+        else:
+            print(f'{string} exists!')
+            continue
+
         # for file in os.listdir(target_path):
 
         #     #print(target_path + file)
@@ -684,8 +688,8 @@ def bench_fig1():
 
 def bench_basis():
 
-    Ls = [32]
-    dims = [128, 256, 512, 1024]
+    Ls = [128]
+    dims = [128, 256, 512]
 
     repeat = 1
     vss  = [3/4]
@@ -695,19 +699,16 @@ def bench_basis():
 
     for _, L in enumerate(Ls):
 
-        biases = [0.0,
+        biases = [
               0.25,
-              #0.5,
-              #0.75,
-              #1.5
               ]
 
 
         for _, bias in enumerate(biases):
 
-            Us = [3.3,
+            Us = [#3.3,
                   3.5,
-                  3.7
+                  #3.7
                   ] #U_determine(L, bias, 'prodApr9testbias')
 
             print(Us)
@@ -717,7 +718,8 @@ def bench_basis():
 
             #Us = U_determine(L, bias)
 
-            for tswitch in [tfin/2,
+            for tswitch in [0.0
+                            #tfin/2,
                             #tfin/2
                             ]:
 
@@ -737,7 +739,7 @@ def bench_basis():
                         #"hi" : [1.0],
                         "tswitch" : [tswitch],
                         "timestep": taus,
-                        "order" : [ 'DLSR', 'LSDSR'],
+                        "order" : [ 'DLSR', 'LSDSR', 'SDSLR'],
                         "repeat" : [repeat],
                         "searchmode" : ['iterative'],
                         "finaltol" : [
@@ -763,7 +765,7 @@ def bench_basis():
                         #"hi" : [1.0],
                         "tswitch" : [tswitch],
                         "timestep": taus,
-                        "order" : [ 'DLSR', 'LSDSR', 'LRSDSLR', 'DLRSLR'],
+                        "order" : [ 'DLSR', 'LSDSR', 'LRSDSLR', 'DLRSLR', 'SDSLR', 'SDSLRLR'],
                         "repeat" : [repeat],
                         "searchmode" : ['iterative'],
                         "finaltol" : [
@@ -1098,11 +1100,11 @@ if __name__ == '__main__':
     #DPT_yastn()
     #DPT_bias_test()
     #DPT_bias_bs()
-    #bench_basis()
+    bench_basis()
     #onepass_bias()
     #onepass_nobias()
     #onepass_nobias()
-    onepass_nobias()
+    #onepass_nobias()
     #onepass_nobias_completion_logsine()
     #DPT_nobias_bs()
     #bias_determine()

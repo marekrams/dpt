@@ -173,6 +173,9 @@ def run_evolution(psi, NW, NS, U, muL, muR, vS0, vS1, mapping, order, merge, sym
 
     for t0, t1, stage in [(0, tswitch, 1), (tswitch, tfin, 2)]:
 
+        if stage == 1 and tswitch == 0:
+            continue
+
         if stage == 1:
             H, M = Hamiltonian(mapping)(NW, NS, muL, muR, muDs, vS0, U, sym=sym, Hdebug = Hdebug, order=sites, rtype = rtype, Lambda = Lambda, **config_kwargs)
             if Hdebug:
@@ -217,20 +220,18 @@ def run_evolution(psi, NW, NS, U, muL, muR, vS0, vS1, mapping, order, merge, sym
             occs = [ mps.vdot(psi, Ons[s], psi).real for s in QPC]
 
             ent = psi.get_entropy()
+            current1 = get_current(psi, s2i, qc, qcp, qI, dI, merge)
 
-            if config_kwargs['backend'] != 'torch':
-                current1 = get_current(psi, s2i, qc, qcp, qI, dI, merge)
 
-                with open(f'{curpath}current1', 'a') as f:
-                    np.savetxt( f, [current1])
-
-            else:
+            if config_kwargs['backend'] == 'torch':
+                
                 ent = [ val.cpu() for val in ent]
                 occs = [ val.cpu() for val in occs]
                 n1 = n1.cpu()
                 m12 = m12.cpu()
+                current1 = current1.cpu()
                 
-
+            ent = np.array(ent)
             #current2 = get_current(psi, s2i, qc, qcp, qI, dI, merge, method = 'inner')
 
             #current = get_current()
@@ -254,6 +255,8 @@ def run_evolution(psi, NW, NS, U, muL, muR, vS0, vS1, mapping, order, merge, sym
             with open(f'{curpath}times', 'a') as f:
                 np.savetxt( f, [step.tf])
 
+            with open(f'{curpath}current1', 'a') as f:
+                np.savetxt( f, [current1])
             # with open(f'{curpath}current2', 'a') as f:
             #     np.savetxt( f, [current2])
 
