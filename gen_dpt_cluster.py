@@ -619,80 +619,15 @@ def bias_determine(L):
 #                     #print( dpt_single["U"], dpt_single["n1init"])
 #                     gen_dpt_cluster(dpt_single)
 
-
-
-
-def bench_fig1():
-
-    Ls = [128]
-    dims = [256, 512]
-    
-    repeat = 1
-    vss  = [1/8, 3/4]
-    taus = [1/8]
-    merge = [True]
-
-    for _, L in enumerate(Ls):
-
-        biases = [#0.0,
-              0.25,
-              #0.5,
-              0.75,
-              #1.5
-              ]
-        
-        
-        for _, bias in enumerate(biases):
-
-            Us = [2.0, 5.0] #U_determine(L, bias, 'prodApr9testbias')
-
-            print(Us)
-            #tfin = L * 0.9
-            # tfin = L * 7/8
-            tfin = L
-
-            #Us = U_determine(L, bias)
-
-            for tswitch in [#tfin/4, 
-                            tfin/2
-                            ]:
-
-                for k, U in enumerate(Us):
-                    
-                    dpt_single = {
-                        "U": [U],
-                        "L" : [L],
-                        "tfin" : [tfin],
-                        "TEdim": dims,
-                        "mixed": [True],
-                        "vs" : vss,
-                        "merge" : merge,
-                        "biasLR" : [bias],
-                        "n1init" : [1.0],
-                        #"lo" : [0.5],
-                        #"hi" : [1.0],
-                        "tswitch" : [tswitch],
-                        "timestep": taus,
-                        "order" : [ 'DLRSLR'],
-                        "repeat" : [repeat],
-                        "searchmode" : ['iterative'],
-                        "finaltol" : [
-                            #1e-3, 
-                            1e-5]
-                    }
-
-                    #print( dpt_single["U"], dpt_single["n1init"])
-                    gen_dpt_cluster(dpt_single)
-
-
+\
 
 def bench_basis():
 
     Ls = [128]
-    dims = [128, 256, 512]
+    dims = [64, 128, 256,  512]
 
     repeat = 1
-    vss  = [3/4]
+    vss  = [3/4, 1/8]
     taus = [1/8]
     merge = [True]
     n1inits = [1.0]
@@ -701,27 +636,26 @@ def bench_basis():
 
         biases = [
               0.25,
+              0.0
               ]
 
 
         for _, bias in enumerate(biases):
 
-            Us = [#3.3,
-                  3.5,
+            Us = [2.0, 3.0, 4.0, 5.0
+                  #3.5,
                   #3.7
                   ] #U_determine(L, bias, 'prodApr9testbias')
 
             print(Us)
             #tfin = L * 0.9
             #tfin = L * 7/8
-            tfin = L * 7/8
+            tfin = L 
 
             #Us = U_determine(L, bias)
 
-            for tswitch in [0.0
-                            #tfin/2,
-                            #tfin/2
-                            ]:
+            tswitches = [0.0, tfin/2] if bias != 0 else [0.0]
+            for tswitch in tswitches:
 
                 for k, U in enumerate(Us):
 
@@ -953,133 +887,133 @@ def onepass_nobias():
 #                     gen_dpt_cluster(dpt_single)
 
 
-def onepass_nobias_testlog():
+# def onepass_nobias_testlog():
 
-    Ls = [64, 256]
-    dims = [128, 256]
+#     Ls = [64, 256]
+#     dims = [128, 256]
 
-    repeat = 1
-    vss  = [3/4]
-    taus = [1/8]
-    merge = [True]
+#     repeat = 1
+#     vss  = [3/4]
+#     taus = [1/8]
+#     merge = [True]
 
-    for _, L in enumerate(Ls):
+#     for _, L in enumerate(Ls):
 
-        biases = [0.0,
-              ]
-
-
-        for _, bias in enumerate(biases):
-
-            Us = np.linspace(2.6, 3.8, 85)
-
-            print(Us)
-            #tfin = L * 0.9
-            tfin = L * 3
-            #tfin = L * 15/16
-
-            #Us = U_determine(L, bias)
-
-            for tswitch in [#tfin/4,
-                            0
-                            #tfin/2
-                            ]:
-
-                for k, U in enumerate(Us):
-
-                    dpt_single = {
-                        "U": [U],
-                        "L" : [L],
-                        "tfin" : [tfin],
-                        "TEdim": dims,
-                        "mixed": [True],
-                        "vs" : vss,
-                        "merge" : merge,
-                        "biasLR" : [bias],
-                        "n1init" : [1.0],
-                        #"lo" : [0.5],
-                        #"hi" : [1.0],
-                        "tswitch" : [tswitch],
-                        "timestep": taus,
-                        "order" : [ 'LSDSR'],
-                        "repeat" : [repeat],
-                        "rtype" : ["log"],
-                        "Lambda" : [1.1, 1.2],
-                        "searchmode" : ['iterative'],
-                        "finaltol" : [
-                            #1e-3,
-                            1e-5]
-                    }
-
-                    #print( dpt_single["U"], dpt_single["n1init"])
-                    gen_dpt_cluster(dpt_single)
+#         biases = [0.0,
+#               ]
 
 
+#         for _, bias in enumerate(biases):
+
+#             Us = np.linspace(2.6, 3.8, 85)
+
+#             print(Us)
+#             #tfin = L * 0.9
+#             tfin = L * 3
+#             #tfin = L * 15/16
+
+#             #Us = U_determine(L, bias)
+
+#             for tswitch in [#tfin/4,
+#                             0
+#                             #tfin/2
+#                             ]:
+
+#                 for k, U in enumerate(Us):
+
+#                     dpt_single = {
+#                         "U": [U],
+#                         "L" : [L],
+#                         "tfin" : [tfin],
+#                         "TEdim": dims,
+#                         "mixed": [True],
+#                         "vs" : vss,
+#                         "merge" : merge,
+#                         "biasLR" : [bias],
+#                         "n1init" : [1.0],
+#                         #"lo" : [0.5],
+#                         #"hi" : [1.0],
+#                         "tswitch" : [tswitch],
+#                         "timestep": taus,
+#                         "order" : [ 'LSDSR'],
+#                         "repeat" : [repeat],
+#                         "rtype" : ["log"],
+#                         "Lambda" : [1.1, 1.2],
+#                         "searchmode" : ['iterative'],
+#                         "finaltol" : [
+#                             #1e-3,
+#                             1e-5]
+#                     }
+
+#                     #print( dpt_single["U"], dpt_single["n1init"])
+#                     gen_dpt_cluster(dpt_single)
 
 
-def onepass_nobias_completion_logsine():
-
-    Ls = [128]
-
-    repeat = 1
-    vss  = [3/4]
-    taus = [1/8]
-    merge = [True]
-
-    for _, L in enumerate(Ls):
-
-        biases = [0.0,
-              ]
 
 
-        for _, bias in enumerate(biases):
+# def onepass_nobias_completion_logsine():
 
-            Us = np.linspace(2.6, 3.1, 35, endpoint = False)
+#     Ls = [128]
 
-            print(Us)
-            #tfin = L * 0.9
-            tfin = L * 7/8
-            #tfin = L * 15/16
+#     repeat = 1
+#     vss  = [3/4]
+#     taus = [1/8]
+#     merge = [True]
 
-            #Us = U_determine(L, bias)
+#     for _, L in enumerate(Ls):
 
-            for tswitch in [#tfin/4,
-                            0
-                            #tfin/2
-                            ]:
+#         biases = [0.0,
+#               ]
 
-                for k, U in enumerate(Us):
 
-                    dpt_single = {
-                        "U": [U],
-                        "L" : [L],
-                        "tfin" : [tfin],
-                        "TEdim": [128],
-                        "mixed": [True],
-                        "vs" : vss,
-                        "merge" : merge,
-                        "biasLR" : [bias],
-                        "n1init" : [1.0],
-                        #"lo" : [0.5],
-                        #"hi" : [1.0],
-                        "tswitch" : [tswitch],
-                        "timestep": taus,
-                        "order" : [ 'LSDSR'],
-                        "repeat" : [repeat],
-                        "searchmode" : ['iterative'],
-                        "finaltol" : [
-                            #1e-3,
-                            1e-5]
-                    }
+#         for _, bias in enumerate(biases):
 
-                    #print( dpt_single["U"], dpt_single["n1init"])
-                    gen_dpt_cluster(dpt_single)
+#             Us = np.linspace(2.6, 3.1, 35, endpoint = False)
 
-                    dpt_single['rtype'] = ['log']
-                    dpt_single['Lambda'] = [1.2, 1.5]
-                    dpt_single['TEdim'] = [128, 256]
+#             print(Us)
+#             #tfin = L * 0.9
+#             tfin = L * 7/8
+#             #tfin = L * 15/16
 
-                    gen_dpt_cluster(dpt_single)
+#             #Us = U_determine(L, bias)
+
+#             for tswitch in [#tfin/4,
+#                             0
+#                             #tfin/2
+#                             ]:
+
+#                 for k, U in enumerate(Us):
+
+#                     dpt_single = {
+#                         "U": [U],
+#                         "L" : [L],
+#                         "tfin" : [tfin],
+#                         "TEdim": [128],
+#                         "mixed": [True],
+#                         "vs" : vss,
+#                         "merge" : merge,
+#                         "biasLR" : [bias],
+#                         "n1init" : [1.0],
+#                         #"lo" : [0.5],
+#                         #"hi" : [1.0],
+#                         "tswitch" : [tswitch],
+#                         "timestep": taus,
+#                         "order" : [ 'LSDSR'],
+#                         "repeat" : [repeat],
+#                         "searchmode" : ['iterative'],
+#                         "finaltol" : [
+#                             #1e-3,
+#                             1e-5]
+#                     }
+
+#                     #print( dpt_single["U"], dpt_single["n1init"])
+#                     gen_dpt_cluster(dpt_single)
+
+#                     dpt_single['rtype'] = ['log']
+#                     dpt_single['Lambda'] = [1.2, 1.5]
+#                     dpt_single['TEdim'] = [128, 256]
+
+#                     gen_dpt_cluster(dpt_single)
 
 
 if __name__ == '__main__':
