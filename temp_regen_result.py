@@ -20,7 +20,7 @@ def recal_ent(fs):
 
         SvN = np.loadtxt( f'{fstr}/SvN')
 
-        effE = np.log( np.power( np.sum( np.exp( 3 * SvN), axis = 1) / ( SvN.shape[-1] ), 1/3))
+        effE = np.log2( np.power( np.sum( np.exp( 3 * SvN), axis = 1) / ( SvN.shape[-1] ), 1/3))
         np.savetxt( f'{fstr}/Seff', effE)
         
 
@@ -66,10 +66,12 @@ if __name__ == '__main__':
               glob(f'{TOP}/ProdAug10/U*'),
               glob(f'{TOP}/Aug1log/U*'),
               glob(f'{TOP}/Aug13logcompletion/U*'), 
-              glob(f'{TOP}/ProdAug20spatial/U*')]
+              glob(f'{TOP}/ProdAug20spatial/U*'),
+              glob(f'{TOP}/Aug29checkbias/U*'), 
+              glob(f'{TOP}/Aug31_lowhighU/U*')]
     print( [ len(f) for f in allf])
 
     fs = reduce( lambda x, y: x + y, allf)
 
     recal_ent(fs)
-    zipfiles(fs)
+    #zipfiles(fs)

@@ -624,7 +624,6 @@ def bias_determine(L):
 def bench_basis():
 
     Ls = [128]
-    dims = [64, 128, 256,  512]
 
     repeat = 1
     vss  = [3/4, 1/8]
@@ -642,7 +641,7 @@ def bench_basis():
 
         for _, bias in enumerate(biases):
 
-            Us = [2.0, 3.0, 4.0, 5.0
+            Us = [2.0, 5.0
                   #3.5,
                   #3.7
                   ] #U_determine(L, bias, 'prodApr9testbias')
@@ -655,6 +654,7 @@ def bench_basis():
             #Us = U_determine(L, bias)
 
             tswitches = [0.0, tfin/2] if bias != 0 else [0.0]
+            dims = [64, 128, 256] if bias != 0 else [64, 128]
             for tswitch in tswitches:
 
                 for k, U in enumerate(Us):
@@ -699,7 +699,7 @@ def bench_basis():
                         #"hi" : [1.0],
                         "tswitch" : [tswitch],
                         "timestep": taus,
-                        "order" : [ 'DLSR', 'LSDSR', 'LRSDSLR', 'DLRSLR', 'SDSLR', 'SDSLRLR'],
+                        "order" : [ 'DLSR', 'LSDSR', 'LRSDSLR', 'SDSLR', 'SDSLRLR'],
                         "repeat" : [repeat],
                         "searchmode" : ['iterative'],
                         "finaltol" : [
