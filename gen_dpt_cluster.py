@@ -829,6 +829,66 @@ def onepass_nobias():
                     gen_dpt_cluster(dpt_single)
 
 
+
+def other_vs():
+
+    Ls = [256]
+    dims = [128]
+
+    repeat = 1
+    vss  = [1/4, 1/8, 1/32]
+    taus = [1/8]
+    merge = [True]
+    SBs = [0.0] #[-0.1, -0.05, -0.01, -0.005]
+
+    for _, L in enumerate(Ls):
+
+        biases = [0.0,
+              ]
+
+
+        for _, bias in enumerate(biases):
+
+            #Us = np.arange(2.5, 4.0, 1/40) 
+            #Us = np.linspace(2.5, 4, 60)
+            Us = np.linspace(2.0, 5.0, 10)
+
+            tfin = L#(L + 1) / 2 / np.pi
+
+            for tswitch in [#tfin/4,
+                            0
+                            #tfin/2
+                            ]:
+
+                for k, U in enumerate(Us):
+
+                    dpt_single = {
+                        "U": [U],
+                        "L" : [L],
+                        "tfin" : [tfin],
+                        "TEdim": dims,
+                        "mixed": [True],
+                        "vs" : vss,
+                        "merge" : merge,
+                        "biasLR" : [bias],
+                        "n1init" : [1.0],
+                        #"lo" : [0.5],
+                        #"hi" : [1.0],
+                        "tswitch" : [tswitch],
+                        "timestep": taus,
+                        "SB" : SBs,
+                        "order" : [ 'LSDSR'],
+                        "repeat" : [repeat],
+                        "searchmode" : ['iterative'],
+                        "finaltol" : [
+                            #1e-3,
+                            1e-5]
+                    }
+
+                    #print( dpt_single["U"], dpt_single["n1init"])
+                    gen_dpt_cluster(dpt_single)
+
+
 # def DPT_nobias_bs():
 
 #     Ls = [32, 64, 96, 128]
@@ -1034,7 +1094,7 @@ if __name__ == '__main__':
     #DPT_yastn()
     #DPT_bias_test()
     #DPT_bias_bs()
-    bench_basis()
+    other_vs()
     #onepass_bias()
     #onepass_nobias()
     #onepass_nobias()
