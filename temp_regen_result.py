@@ -20,7 +20,7 @@ def recal_ent(fs):
 
         SvN = np.loadtxt( f'{fstr}/SvN')
 
-        effE = np.log2( np.power( np.sum( np.exp( 3 * SvN), axis = 1) / ( SvN.shape[-1] ), 1/3))
+        effE = np.log( np.power( np.sum( np.exp( 3 * SvN), axis = 1) / ( SvN.shape[-1] ), 1/3))
         np.savetxt( f'{fstr}/Seff', effE)
         
 

@@ -236,7 +236,7 @@ def run_evolution(psi, NW, NS, U, muL, muR, vS0, vS1, mapping, order, merge, sym
 
             #current = get_current()
 
-            effE = np.log2( np.power( np.sum( np.exp( 3 * ent)) / ( len(ent) ), 1/3))
+            effE = np.log( np.power( np.sum( np.exp( 3 * ent)) / ( len(ent) ), 1/3))
 
             end_time = time.time()
             fprint(f"TDVP end: {step.tf}, elapsed time: {end_time - start_time}")

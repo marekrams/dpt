@@ -832,14 +832,22 @@ def onepass_nobias():
 
 def other_vs():
 
-    Ls = [256]
-    dims = [128]
+    Ls = [512]
+    dims = [64, 128]
 
     repeat = 1
-    vss  = [1/4, 1/8, 1/32]
+    vss  = [1/4, 1/8, 1/16, 1/32, 1/64]
     taus = [1/8]
     merge = [True]
     SBs = [0.0] #[-0.1, -0.05, -0.01, -0.005]
+
+    dU = {
+        1/4: np.linspace(1.75, 3.25, 21),
+        1/8: np.linspace(1.5, 3, 21),
+        1/16: np.linspace(1.25, 2.75, 21),
+        1/32: np.linspace(1, 2.5, 21),
+        1/64: np.linspace(0.75, 2.25, 21),
+    }
 
     for _, L in enumerate(Ls):
 
@@ -849,44 +857,36 @@ def other_vs():
 
         for _, bias in enumerate(biases):
 
-            #Us = np.arange(2.5, 4.0, 1/40) 
-            #Us = np.linspace(2.5, 4, 60)
-            Us = np.linspace(2.0, 5.0, 10)
+            tfin = (L + 1) / 2 / np.pi
 
-            tfin = L#(L + 1) / 2 / np.pi
+            for vs in vss:
+                Us = dU[vs]
 
-            for tswitch in [#tfin/4,
-                            0
-                            #tfin/2
-                            ]:
-
-                for k, U in enumerate(Us):
-
-                    dpt_single = {
-                        "U": [U],
-                        "L" : [L],
-                        "tfin" : [tfin],
-                        "TEdim": dims,
-                        "mixed": [True],
-                        "vs" : vss,
-                        "merge" : merge,
-                        "biasLR" : [bias],
-                        "n1init" : [1.0],
-                        #"lo" : [0.5],
-                        #"hi" : [1.0],
-                        "tswitch" : [tswitch],
-                        "timestep": taus,
-                        "SB" : SBs,
-                        "order" : [ 'LSDSR'],
-                        "repeat" : [repeat],
-                        "searchmode" : ['iterative'],
-                        "finaltol" : [
-                            #1e-3,
-                            1e-5]
-                    }
+                dpt_single = {
+                    "U": Us,
+                    "L" : [L],
+                    "tfin" : [tfin],
+                    "TEdim": dims,
+                    "mixed": [True],
+                    "vs" : [vs],
+                    "merge" : merge,
+                    "biasLR" : [bias],
+                    "n1init" : [1.0],
+                    #"lo" : [0.5],
+                    #"hi" : [1.0],
+                    "tswitch" : [0.0],
+                    "timestep": taus,
+                    "SB" : SBs,
+                    "order" : [ 'LSDSR'],
+                    "repeat" : [repeat],
+                    "searchmode" : ['iterative'],
+                    "finaltol" : [
+                        #1e-3,
+                        1e-5]
+                }
 
                     #print( dpt_single["U"], dpt_single["n1init"])
-                    gen_dpt_cluster(dpt_single)
+                gen_dpt_cluster(dpt_single)
 
 
 # def DPT_nobias_bs():
