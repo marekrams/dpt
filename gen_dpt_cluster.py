@@ -714,8 +714,8 @@ def bench_basis():
 
 def onepass_bias():
 
-    Ls = [128, 256]
-    dims = [128, 256]
+    Ls = [32, 64]
+    dims = [256, 512, 1024]
     
     repeat = 1
     vss  = [3/4]
@@ -724,7 +724,7 @@ def onepass_bias():
 
     for _, L in enumerate(Ls):
 
-        biases = [0.0,
+        biases = [0.25
               ]
         
         
@@ -1094,8 +1094,8 @@ if __name__ == '__main__':
     #DPT_yastn()
     #DPT_bias_test()
     #DPT_bias_bs()
-    other_vs()
-    #onepass_bias()
+    #other_vs()
+    onepass_bias()
     #onepass_nobias()
     #onepass_nobias()
     #onepass_nobias()
