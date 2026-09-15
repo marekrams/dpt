@@ -90,6 +90,25 @@ def changetime():
 
             remove( f'{f}/CALC_FIN')
 
+def changetime_flat():
+
+    fs = glob( f'{getcwd()}/U*')
+    for f in fs:
+
+        with open(f'{f}/dptpara.json', 'r') as infile:
+            para = json.load(infile)
+
+        new = para
+        new['tfin'] = 1024 * 7/8
+
+        with open(f'{f}/dptpara.json', 'w') as out:
+            json.dump(new, out, indent = 4)
+
+        try:
+            remove( f'{f}/CALC_FIN')
+        except:
+            continue
+
 
 
 # we strictly need n1 to run to full
@@ -125,4 +144,5 @@ def check_TOL(default = "U*"):
 if __name__ == '__main__':
     #check_missing(default = "*dim1024*")
     #check_TOL()
-    changetime()
+    #changetime()
+    changetime_flat()

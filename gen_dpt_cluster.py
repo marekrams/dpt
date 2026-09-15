@@ -714,8 +714,8 @@ def bench_basis():
 
 def onepass_bias():
 
-    Ls = [32, 64]
-    dims = [256, 512, 1024]
+    Ls = [64, 128, 256]
+    dims = [512]
     
     repeat = 1
     vss  = [3/4]
@@ -731,7 +731,7 @@ def onepass_bias():
         for _, bias in enumerate(biases):
 
             #Us = np.linspace(3.1, 3.8, 50) #U_determine(L, bias, 'prodApr9testbias')
-            Us = np.linspace(3, 4, 30)
+            Us = np.linspace(2.5, 4, 59)
             print(Us)
             #tfin = L * 0.9
             tfin = L * 7/8
@@ -739,7 +739,8 @@ def onepass_bias():
 
             #Us = U_determine(L, bias)
 
-            for tswitch in [tfin/4, 
+            for tswitch in [0, 
+                            tfin/4,
                             tfin/2
                             ]:
 
