@@ -3,6 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import yastn.tn.mps as mps
 import json
+from pathlib import Path
 from hamiltonians import local_operators, Hamiltonian_dpt_position, Hamiltonian_dpt_momentum, Hamiltonian_dpt_mixed, imaginary_time_evolution
 from auxilliary import merge_sites, op1site, get_current, gpu_report
 from sites import L, S, D, R, order_sites
@@ -258,11 +259,25 @@ def run_evolution(psi, NW, NS, U, muL, muR, vS0, vS1, mapping, order, merge, sym
 
             psidata = psi.save_to_dict()
             #fprint(psidata)
-            with open(f'{curpath}TDVPlast.npy', 'wb') as f:
-                np.save(f, psidata, allow_pickle=True)
+            # with open(f'{curpath}TDVPlast.npy', 'wb') as f:
+            #     np.save(f, psidata, allow_pickle=True)
 
-            with open(f'{curpath}TDVPlastback.npy', 'wb') as f:
-                np.save(f, psidata, allow_pickle=True)
+            # with open(f'{curpath}TDVPlastback.npy', 'wb') as f:
+            #     np.save(f, psidata, allow_pickle=True)
+
+            checkpoint = Path(curpath) / "TDVPlast.npy"
+            temporary = checkpoint.with_suffix(".npy.tmp")
+
+            try:
+                with open(temporary, "wb") as f:
+                    np.save(f, psidata, allow_pickle=True)
+                    f.flush()               
+                    os.fsync(f.fileno())    
+
+                os.replace(temporary, checkpoint)
+
+            finally:
+                temporary.unlink(missing_ok=True)  
 
             with open(f'{curpath}times', 'a') as f:
                 np.savetxt( f, [step.tf])
@@ -281,8 +296,8 @@ def run_evolution(psi, NW, NS, U, muL, muR, vS0, vS1, mapping, order, merge, sym
             with open(f'{curpath}m12', 'a') as f:
                 np.savetxt( f, [m12])
 
-            with open(f'{curpath}SvN', 'a') as f:
-                np.savetxt( f, [ent])
+            # with open(f'{curpath}SvN', 'a') as f:
+            #     np.savetxt( f, [ent])
 
             with open(f'{curpath}MaxEnt', 'a') as f:
                 np.savetxt( f, [max(ent)])
@@ -397,7 +412,7 @@ def singlerun(para: dict, config_kwargs):
 
                 try:
                     psi0 = load_psi(f'{curpath}TDVPlast.npy', sym, message="Loading last", **config_kwargs)
-                except:
+                except Exception:
                     psi0 = load_psi(f'{curpath}TDVPlastback.npy', sym, message="Loading last backup", **config_kwargs)
             
         # no time file, starting new!

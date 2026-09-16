@@ -772,6 +772,47 @@ def onepass_bias():
                     gen_dpt_cluster(dpt_single)
 
 
+
+def GS():
+
+    Ls = [64, 128, 256]
+    dims = [128]
+    
+    vss  = [3/4]
+    merge = [True]
+
+    for _, L in enumerate(Ls):
+
+        biases = [0.0
+              ]
+        
+        
+        for _, bias in enumerate(biases):
+
+            #Us = np.linspace(3.1, 3.8, 50) #U_determine(L, bias, 'prodApr9testbias')
+            Us = np.linspace(3.5, 5, 60)
+            print(Us)
+
+            for k, U in enumerate(Us):
+                
+                dpt_single = {
+                    "U": [U],
+                    "L" : [L],
+                    "TEdim": dims,
+                    "mixed": [True],
+                    "vs" : vss,
+                    "merge" : merge,
+                    "biasLR" : [bias],
+                    #"lo" : [0.5],
+                    #"hi" : [1.0],
+                    "order" : [ 'LSDSR'],
+                    "searchmode" : ['GS'],
+                }
+
+                #print( dpt_single["U"], dpt_single["n1init"])
+                gen_dpt_cluster(dpt_single)
+
+
 def onepass_nobias():
 
     Ls = [2048]
@@ -1100,7 +1141,8 @@ if __name__ == '__main__':
     #onepass_bias()
     #onepass_nobias()
     #onepass_bias()
-    onepass_nobias()
+    #onepass_nobias()
+    GS()
     #onepass_nobias()
     #onepass_nobias()
     #onepass_nobias_completion_logsine()
