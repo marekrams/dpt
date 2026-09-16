@@ -6,6 +6,7 @@
 *.json
 out/*
 test/*
+GS/*
 log*
 results*/*
 *repeat*/*

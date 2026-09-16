@@ -1,5 +1,5 @@
 {
-    "U": 100.0,
+    "U": 3.5,
     "L": 64,
     "R": 64,
     "tswitch": 0,
@@ -14,7 +14,7 @@
     "order": "LSDSR",
     "lo": 0.5,
     "hi": 1.0,
-    "searchmode": "iterative",
+    "searchmode": "GS",
     "max1": 256,
     "max2": 64,
     "SB": 0.0,

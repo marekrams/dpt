@@ -86,7 +86,12 @@ def initial_state(NW, NS, U, muL, muR, vS0, alpha, mapping, order, merge, sym, D
     else:
         raise ValueError("Only sym = 'U1' or 'Z2' suported.")
 
-    H0, M = Hamiltonian(mapping)(NW, NS, muL, muR, muDs, vS0, U * (2 * alpha - 1), Hdebug = Hdebug, sym=sym, order=sites, rtype = rtype, Lambda = Lambda, **config_kwargs)
+    if alpha is None:
+        effU = U
+    else:
+        effU = U * (2 * alpha - 1)
+
+    H0, M = Hamiltonian(mapping)(NW, NS, muL, muR, muDs, vS0, effU, Hdebug = Hdebug, sym=sym, order=sites, rtype = rtype, Lambda = Lambda, **config_kwargs)
     qI, qc, qcp, qn, dx, dn1, dn2, dI, m12, m21 = local_operators(sym=sym, **config_kwargs)
 
     if Hdebug:
@@ -124,17 +129,24 @@ def initial_state(NW, NS, U, muL, muR, vS0, alpha, mapping, order, merge, sym, D
     On1 = merge_sites(op1site(dn1, 'D1', s2i, qI, dI), s2i, merge)
     On2 = merge_sites(op1site(dn2, 'D1', s2i, qI, dI), s2i, merge)
 
-    fprint("Before: n1 = ", mps.vdot(psi, On1, psi), "n2 = ", mps.vdot(psi, On2, psi))
+    n1 = mps.vdot(psi, On1, psi)
+    n2 = mps.vdot(psi, On2, psi)
 
-    O = (np.sqrt(alpha) * dn1 + np.sqrt(1 - alpha) * m12)
-    O = op1site(O, 'D1', s2i, qI, dI)
-    O = merge_sites(O, s2i, merge)
+    fprint("Before: n1 = ", n1, "n2 = ", n2)
 
-    psi = O @ psi
-    psi.canonize_(to='last')
-    psi.canonize_(to='first')
+    if alpha is not None:
 
-    fprint("Done. n1 = ", mps.vdot(psi, On1, psi), "n2 = ", mps.vdot(psi, On2, psi))
+        O = (np.sqrt(alpha) * dn1 + np.sqrt(1 - alpha) * m12)
+        O = op1site(O, 'D1', s2i, qI, dI)
+        O = merge_sites(O, s2i, merge)
+
+        psi = O @ psi
+        psi.canonize_(to='last')
+        psi.canonize_(to='first')
+
+    n1 = mps.vdot(psi, On1, psi)
+    n2 = mps.vdot(psi, On2, psi)
+    fprint("Done. n1 = ", n1, "n2 = ", n2)
 
     psidata = psi.save_to_dict()
     with open(f'{curpath}init.npy', 'wb') as f:
@@ -143,7 +155,7 @@ def initial_state(NW, NS, U, muL, muR, vS0, alpha, mapping, order, merge, sym, D
     with open(f'{curpath}initenergy', 'w') as f:
         np.savetxt(f, [info.energy])
 
-    return psi, info.energy
+    return psi, n1
 
 
 def run_evolution(psi, NW, NS, U, muL, muR, vS0, vS1, mapping, order, merge, sym, D_total, tswitch, tfin, dt, lasttime = -1, 
@@ -286,6 +298,44 @@ def run_evolution(psi, NW, NS, U, muL, muR, vS0, vS1, mapping, order, merge, sym
 
 
 
+def groundstate(para: dict, config_kwargs):
+
+
+    L = int(para['L'])
+    NS = 4
+    U = float(para['U'])
+    muL = float(para['biasLR'])
+    muR = -float(para['biasLR'])
+    mixed = bool(para['mixed'])
+    merge = bool(para["merge"])
+    SB = float(para.get('SB', 0.0))
+    mapping = 'mixed' if mixed else 'position'
+    sym = 'U1'
+    order = para['order']
+    D = int(para['TEdim'])
+    vs = float(para['vs'])
+    max2 = int(para["max2"])
+    max1 = int(para["max1"])
+    rtype = para.get('rtype', 'sin-transform')
+    Lambda = para.get('Lambda', None)
+
+    curpath = f'{getcwd()}/GS/'
+
+    if not os.path.isdir(curpath):
+        mkdir(curpath)
+
+
+    sites = order_sites(mapping, order, L, NS=NS, muL = muL, muR = muR, rtype = rtype, Lambda = Lambda)
+
+    _ , n1 = initial_state(L, NS, U, 0.0, 0.0, vs, None, mapping, order, merge, sym, D, curpath=curpath, max1 = max1, max2 = max2, sites = sites,  rtype = rtype, Lambda = Lambda, muDs=[0, 0], **config_kwargs)
+
+    np.savetxt( f'{curpath}n1', [n1])
+
+    return None
+
+
+
+
 def singlerun(para: dict, config_kwargs):
 
 
@@ -355,7 +405,7 @@ def singlerun(para: dict, config_kwargs):
             fprint("Starting new")
             sites = order_sites(mapping, order, L, NS=NS, muL = muL, muR = muR, rtype = rtype, Lambda = Lambda)
 
-            psi0 , _ = initial_state(L, NS, U, 0.0, 0.0, 0, alpha, mapping, order, merge, sym, D, curpath=curpath, max1 = max1, max2 = max2, sites = sites,  rtype = rtype, Lambda = Lambda, **config_kwargs)
+            psi0 , *_ = initial_state(L, NS, U, 0.0, 0.0, 0, alpha, mapping, order, merge, sym, D, curpath=curpath, max1 = max1, max2 = max2, sites = sites,  rtype = rtype, Lambda = Lambda, **config_kwargs)
 
             if config_kwargs['backend'] == 'torch':
                 gpu_report('DMRG')
@@ -567,7 +617,10 @@ if __name__ == '__main__':
         #     singlerun_binary_search(para, config_kwargs)
 
         singlerun_binary_search(para, config_kwargs)
-            
+
+    elif mode == 'GS':
+        fprint("GROUND STATE")
+        groundstate(para, config_kwargs)
         
     else:
         raise ValueError("not recognized searchmode")
