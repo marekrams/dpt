@@ -775,8 +775,8 @@ def onepass_bias():
 
 def GS():
 
-    Ls = [64, 128, 256]
-    dims = [128]
+    Ls = [64, 128, 256, 512, 1024]
+    dims = [1024]
     
     vss  = [3/4]
     merge = [True]
@@ -790,7 +790,7 @@ def GS():
         for _, bias in enumerate(biases):
 
             #Us = np.linspace(3.1, 3.8, 50) #U_determine(L, bias, 'prodApr9testbias')
-            Us = np.linspace(3.5, 5, 60)
+            Us = np.arange(3, 6, 0.1)
             print(Us)
 
             for k, U in enumerate(Us):
@@ -803,6 +803,8 @@ def GS():
                     "vs" : vss,
                     "merge" : merge,
                     "biasLR" : [bias],
+                    "max1" : [512],
+                    "max2" : [256],
                     #"lo" : [0.5],
                     #"hi" : [1.0],
                     "order" : [ 'LSDSR'],

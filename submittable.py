@@ -584,6 +584,10 @@ if __name__ == '__main__':
         print("TOL REACHED")
         exit()
 
+    if os.path.isfile(f'{getcwd()}/CALC_FIN'):
+        print("FINISHED")
+        exit()
+
 
     with open( getcwd() + '/dptpara.json', 'r') as io:
         para = json.load(io)
