@@ -4,6 +4,7 @@ from os import getcwd, path, remove
 import numpy as np
 import json
 import shutil
+import os
 
 
 def searchkey(needle, haystack : str, default_key = None, whichseg = -1, default_value = '', func = lambda x: x)  : 
@@ -68,6 +69,77 @@ def check_missing(default = "U*"):
 
     print("terminated log: ", terminatedlog)
     np.savetxt( f'{pwd}/TERMINATEDDIR', list(terminateddir), fmt = '%s')
+
+
+
+def check_stale():
+    output = subprocess.run(['squeue', '-u', 'knl20'], capture_output=True)
+    output = output.stdout.splitlines()
+
+    curjobs  = []
+    
+    for line in output[1:]:
+
+        if 'ReqNodeNotAvail' in str(line):
+            vals = line.split()
+            jobnum = int(vals[0])
+            curjobs.append(jobnum)
+
+
+    for job in curjobs:
+        subprocess.run(['scancel', str(job)])
+
+    pwd = getcwd()
+    np.savetxt( f'{pwd}/stale', list(curjobs), fmt = "%i")
+
+def check_repeated():
+    output = subprocess.run(['squeue', '-u', 'knl20'], capture_output=True)
+    output = output.stdout.splitlines()
+
+    curjobs  = []
+    
+    for line in output[1:]:
+
+        vals = line.split()
+        jobnum = int(vals[0])
+
+        if jobnum > 35400630:
+            curjobs.append(jobnum)
+
+
+    for job in curjobs:
+        subprocess.run(['scancel', str(job)])
+
+    pwd = getcwd()
+    np.savetxt( f'{pwd}/stale', list(curjobs), fmt = "%i")
+
+
+def check_fail():
+    fs = glob("U*")
+
+    fail = []
+    for f in fs:
+
+        try:
+            time = np.loadtxt(f'{f}/iter_repeat0/times')
+
+            if time[-1] < 20:
+                fail.append(f)
+        except:
+            fail.append(f)
+
+    print(len(fail))
+
+    for f in fail:
+
+        print(f)
+        datas = glob(f'{f}/iter_repeat0/*')
+        for data in datas:
+            if 'init.npy' not in data or 'sites' not in data:
+                os.remove(data)
+
+    
+
 
 
 
@@ -145,4 +217,7 @@ if __name__ == '__main__':
     #check_missing(default = "*dim1024*")
     #check_TOL()
     #changetime()
-    changetime_flat()
+    #changetime_flat()
+    #check_stale()
+    #check_fail()
+    check_repeated()

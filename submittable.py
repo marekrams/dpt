@@ -30,14 +30,15 @@ def Hamiltonian( key):
     return ham[key]
 
 
-def init_occupations(mapping, NW, NS):
+def init_occupations(mapping, NW, NS, n1 = 0):
     """ Initial guess of occupations before DMRG. """
     occ = {}
     assert NW % 2 == 0, "Assume even NW for convinience"
     assert NS % 2 == 0, "Assume even NS"
+    assert n1 == 0 or n1 == 1, "n1 is either 0 or 1"
 
     if mapping == "position":
-        occ[D(1)] = 0
+        occ[D(1)] = n1
         for k in range(1, NS + 1):
             occ[S(k)] = 0.5
         for k in range(1, NW + 1):
@@ -46,7 +47,7 @@ def init_occupations(mapping, NW, NS):
 
     if mapping == "mixed":
         NW1 = NW + 1
-        occ[D(1)] = 0
+        occ[D(1)] = n1
         for k in range(1, NS + 1):
             occ[S(k)] = 0.5
         for k in range(1, NW1):
@@ -55,12 +56,12 @@ def init_occupations(mapping, NW, NS):
 
     if mapping == "momentum":
         NW1 = NW + NS // 2 + 1
-        occ[D(1)] = 0
+        occ[D(1)] = n1
         for k in range(1, NW1):
             occ[L(k)] = np.heaviside(k - NW1 / 2, 0.5)
             occ[R(k)] = np.heaviside(k - NW1 / 2, 0.5)
 
-    assert sum(occ.values()) == NW + NS // 2, "We should have half-filling."
+    assert sum(occ.values()) == NW + NS // 2 + n1, "We should have half-filling."
     return occ
 
 
@@ -145,9 +146,9 @@ def initial_state(NW, NS, U, muL, muR, vS0, alpha, mapping, order, merge, sym, D
         psi.canonize_(to='last')
         psi.canonize_(to='first')
 
-    n1 = mps.vdot(psi, On1, psi)
-    n2 = mps.vdot(psi, On2, psi)
-    fprint("Done. n1 = ", n1, "n2 = ", n2)
+        n1 = mps.vdot(psi, On1, psi)
+        n2 = mps.vdot(psi, On2, psi)
+        fprint("Done. n1 = ", n1, "n2 = ", n2)
 
     psidata = psi.save_to_dict()
     with open(f'{curpath}init.npy', 'wb') as f:
@@ -378,6 +379,7 @@ def singlerun(para: dict, config_kwargs):
     rtype = para.get('rtype', 'sin-transform')
     Lambda = para.get('Lambda', None)
 
+    manualn1 = para.get('manualn1', True)
     muDs = [SB, 0.0]
     new = alpha
     tdvptol = 1e-6
@@ -419,6 +421,10 @@ def singlerun(para: dict, config_kwargs):
         else:
             fprint("Starting new")
             sites = order_sites(mapping, order, L, NS=NS, muL = muL, muR = muR, rtype = rtype, Lambda = Lambda)
+
+            if not manualn1:
+                print("NATURAL n1")
+                alpha = None
 
             psi0 , *_ = initial_state(L, NS, U, 0.0, 0.0, 0, alpha, mapping, order, merge, sym, D, curpath=curpath, max1 = max1, max2 = max2, sites = sites,  rtype = rtype, Lambda = Lambda, **config_kwargs)
 
@@ -582,6 +588,10 @@ if __name__ == '__main__':
 
     if os.path.isfile(f'{getcwd()}/TOL_REACHED'):
         print("TOL REACHED")
+        exit()
+
+    if os.path.isfile(f'{getcwd()}/CALC_FIN'):
+        print("FINISHED")
         exit()
 
 

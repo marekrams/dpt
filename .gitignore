@@ -4,6 +4,7 @@
 *.png
 *.txt
 *.json
+minimal_example/*
 out/*
 test/*
 GS/*

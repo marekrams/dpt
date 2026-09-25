@@ -1,0 +1,386 @@
+from ast import Lambda
+
+import numpy as np
+import yastn
+import yastn.tn.mps as mps
+from sites import S, D, L, R, vwk
+from pprint import pprint
+
+
+
+def imaginary_time_evolution(D, psi, H0):
+
+    opts_expmv = {
+        "hermitian": True,
+        "tol": 1e-12,
+    }
+
+    opts_svd = {
+        "tol": 1e-12,
+        "D_total": D,
+    }
+
+    beta_max = 20.0
+    beta_check = 0.5
+    betas = tuple(np.arange(0.0, beta_max + beta_check / 2, beta_check))
+
+    print("IMAGINARY TIME EVOLUTION START:")
+    E_prev = None
+
+    for step in mps.tdvp_(
+        psi,
+        H0,                         # pass the static MPO directly
+        times=betas,
+        dt=0.05,
+        u=1,                        # imaginary time: exp(-beta H0)
+        method="2site",
+        order="2nd",
+        opts_expmv=opts_expmv,
+        opts_svd=opts_svd,
+        normalize=True,
+        subtract_E=True,
+        precompute=False,
+    ):
+        E = mps.measure_mpo(psi, H0, psi).real
+        print(step.tf, E)
+
+        if E_prev is not None:
+            dE = abs(E - E_prev) / max(1.0, abs(E))
+            if dE < 1e-10:
+                break
+
+        E_prev = E
+
+    return psi
+
+def  local_operators(sym='U1', **config_kwargs):
+    ops = yastn.operators.SpinlessFermions(sym=sym, **config_kwargs)
+    qI, qc, qcp, qn = ops.I(), ops.c(), ops.cp(), ops.n()
+    dx = yastn.Tensor(config=qI.config, s=qI.s)
+    dx.set_block(ts=(0, 0), val=[[0, 1], [1, 0]], Ds=(2, 2))
+    dn1 = yastn.Tensor(config=qI.config, s=qI.s)
+    dn1.set_block(ts=(0, 0), val=[[0, 0], [0, 1]], Ds=(2, 2))
+    dn2 = yastn.Tensor(config=qI.config, s=qI.s)
+    dn2.set_block(ts=(0, 0), val=[[1, 0], [0, 0]], Ds=(2, 2))
+    dI = yastn.Tensor(config=qI.config, s=qI.s)
+    dI.set_block(ts=(0, 0), val=[[1, 0], [0, 1]], Ds=(2, 2))
+    m12 = yastn.Tensor(config=qI.config, s=qI.s)
+    m12.set_block(ts=(0, 0), val=[[0, 1], [0, 0]], Ds=(2, 2))
+    m21 = yastn.Tensor(config=qI.config, s=qI.s)
+    m21.set_block(ts=(0, 0), val=[[0, 0], [1, 0]], Ds=(2, 2))
+    return qI, qc, qcp, qn, dx, dn1, dn2, dI, m12, m21
+
+
+def Hamiltonian_dpt_position(NW, NS, muL, muR, muDs, vS, U, w0=1, order=[], sym='U1', Hdebug = False, **config_kwargs):
+    """ generate MPO for DPT in position basis. first dot is interacting with 4 sites """
+    #
+    qI, qc, qcp, qn, dx, dn1, dn2, dI, m12, m21 = local_operators(sym=sym, **config_kwargs)
+    #
+    vL = vR = vLR = w0
+    #
+    # if order == 'DLSR':
+    #     sites = [D(1)]
+    #     sites += [L(k) for k in range(NW, 0, -1)]  # 'L1' is for L mode at the junction
+    #     sites += [S(k) for k in range(1, NS + 1)]  # 'S1' connected to L1
+    #     sites += [R(k) for k in range(1, NW + 1)]  # 'R1' is for R mode at the junction
+    # elif order == 'LDSR':
+    #     sites = [L(k) for k in range(NW, 0, -1)]   # 'L1' is for L mode at the junction
+    #     sites += [S(1), S(2), D(1), S(3), S(4)]
+    #     sites += [R(k) for k in range(1, NW + 1)]  # 'R1' is for R mode at the junction
+    # else:
+    #     sites = order
+
+    sites = order
+
+    s2i = {s: i for i, s in enumerate(sites)}
+    i2s = {i: s for i, s in enumerate(sites)}
+    II = mps.product_mpo([dI if 'D' in site else qI for site in sites])
+
+    try:
+        lD = len(muDs)
+        assert lD == 2
+    except TypeError:
+        muDs = [muDs] * 2
+
+    terms = []
+    for k in range(1, NW + 1): # on-site energies
+        terms.append((muL, [L(k)], [qn]))
+        terms.append((muR, [R(k)], [qn]))
+
+    for k in range(1, NS // 2 + 1): # on-site energies
+        terms.append((muL, [S(k)], [qn]))
+    for k in range(NS // 2 + 1, NS + 1): # on-site energies
+        terms.append((muR, [S(k)], [qn]))
+
+    terms.append((muDs[0], [D(1)], [dn1]))
+    terms.append((muDs[1], [D(1)], [dn2]))
+    terms.append((vS, [D(1)], [dx]))
+
+    terms.append((vLR, [S(1), L(1)], [qcp, qc]))
+    terms.append((vLR, [L(1), S(1)], [qcp, qc]))
+    terms.append((vLR, [R(1), S(NS)], [qcp, qc]))
+    terms.append((vLR, [S(NS), R(1)], [qcp, qc]))
+    for k in range(1, NS):
+        terms.append((vLR, [S(k), S(k+1)], [qcp, qc]))
+        terms.append((vLR, [S(k+1), S(k)], [qcp, qc]))
+    for k in range(1, NW):
+        terms.append((vL, [L(k), L(k+1)], [qcp, qc]))
+        terms.append((vL, [L(k+1), L(k)], [qcp, qc]))
+        terms.append((vR, [R(k), R(k+1)], [qcp, qc]))
+        terms.append((vR, [R(k+1), R(k)], [qcp, qc]))
+
+    # add Coulomb interactions
+    for k in range(1, NS + 1):
+        terms.append((U, (D(1), S(k)), [dn1 - dI / 2, qn - qI / 2]))
+
+    Hterms = [mps.Hterm(v, tuple(s2i[x] for x in p), o) for v, p, o in terms]
+
+    if Hdebug:
+        M = draw_ham(terms, s2i, i2s)
+    else:
+        M = None
+
+    H = mps.generate_mpo(II, Hterms)
+    return H, M
+
+
+def Hamiltonian_dpt_momentum(NW, NS, muL, muR, muDs, vS, U, w0=1, order=[], sym='U1', Hdebug = False, **config_kwargs):
+    """ generate mpo for dpt model in mixed basis """
+    #
+    qI, qc, qcp, qn, dx, dn1, dn2, dI, m12, m21 = local_operators(sym=sym, **config_kwargs)
+    #
+    vL = vR = vLR = w0
+    #
+    NW1 = NW + NS // 2 + 1
+    #
+    # if order == 'DLR':
+    #     sites = [D(1)]
+    #     sites += [L(k) for k in range(1, NW1)]
+    #     sites += [R(k) for k in range(1, NW1)]
+    # else:
+    #     sites = order
+    sites = order
+
+    s2i = {s: i for i, s in enumerate(sites)}
+    i2s = {i: s for i, s in enumerate(sites)}
+    II = mps.product_mpo([dI if 'D' in site else qI for site in sites])
+
+    try:
+        lD = len(muDs)
+        assert lD == 2
+    except TypeError:
+        muDs = [muDs] * 2
+
+    terms = []
+
+    for k in range(1, NW1):  # on-site energies
+        terms.append((muL + 2 * vL * np.cos(np.pi * k / NW1), [L(k)], [qn]))
+        terms.append((muR + 2 * vR * np.cos(np.pi * k / NW1), [R(k)], [qn]))
+
+    terms.append((muDs[0], [D(1)], [dn1]))
+    terms.append((muDs[1], [D(1)], [dn2]))
+    terms.append((vS, [D(1)], [dx]))
+
+    for kl in range(1, NW1):
+        for kr in range(1, NW1):
+            amp = vLR * (2 / NW1) * np.sin(np.pi * 1 * kl / NW1) * np.sin(np.pi * 1 * kr / NW1)
+            terms.append((amp, [L(kl), R(kr)], [qcp, qc]))
+            terms.append((amp, [R(kr), L(kl)], [qcp, qc]))
+
+    for k1 in range(1, NW1):
+       for k2 in range(1, NW1):
+           for ii in range(1, NS // 2 + 1):
+                amp = U * (2 / NW1) * np.sin(np.pi * ii * k1 / NW1) * np.sin(np.pi * ii * k2 / NW1)
+                terms.append((amp, [D(1), L(k1), L(k2)], [dn1 - dI / 2, qcp, qc]))
+                terms.append((amp, [D(1), R(k1), R(k2)], [dn1 - dI / 2, qcp, qc]))
+    terms.append((-NS * U / 2, [D(1)], [dn1 - dI / 2]))
+
+    Hterms = [mps.Hterm(v, tuple(s2i[x] for x in p), o) for v, p, o in terms]
+
+    if Hdebug:
+        M = draw_ham(terms, s2i, i2s)
+    else:
+        M = None
+
+    H = mps.generate_mpo(II, Hterms)
+    return H, M
+
+
+
+def Hamiltonian_dpt_mixed(NW, NS, muL, muR, muDs, vS, U, w0=1, order = [], sym='U1', Hdebug = False, rtype = 'sin-transform', Lambda = None, **config_kwargs):
+    """ generate mpo for dpt model in mixed basis """
+
+    #print("rtype: ", rtype, "Lambda: ", Lambda)
+    qI, qc, qcp, qn, dx, dn1, dn2, dI, m12, m21 = local_operators(sym=sym, **config_kwargs)
+    #
+    vL = vR = vLR = w0
+    #
+    NW1 = NW + 1
+    #
+    # sites = [D(1)]  # will have SLR geomery
+    # sites += [L(k) for k in range(1, NW1)]  # 'L1' is for L mode at the junction
+    # sites += [S(k) for k in range(1, NS + 1)]  # 'S1' connected to L1
+    # sites += [R(k) for k in range(1, NW1)]  # 'R1' is for R mode at the junction
+
+    # legacy code that was not used, as sites are now given by order_sites() function
+
+    # if order == 'LRDSLR':
+    #     sites = []
+    #     for k in range(1, NW1):
+    #         sites.append(L(k))
+    #         sites.append(R(k))
+    #     ss = [S(k) for k in range(1, NS + 1)]
+    #     sites = sites[:NW1] + ss[:NS//2] + ['D1'] + ss[NS//2:] + sites[NW1:]
+    # elif order == 'DLRSLR':
+    #     sites = []
+    #     for k in range(1, NW1):
+    #         sites.append(L(k))
+    #         sites.append(R(k))
+    #     sites = [D(1)] + sites[:NW1] + [S(k) for k in range(1, NS + 1)] + sites[NW1:]
+    # else:
+    #     sites = order
+    sites = order
+
+    # here sites are ordered in position
+    s2i = {s: i for i, s in enumerate(sites)}
+    i2s = {i: s for i, s in enumerate(sites)}
+    II = mps.product_mpo([dI if 'D' in site else qI for site in sites])
+
+    try:
+        lD = len(muDs)
+        assert lD == 2
+    except TypeError:
+        muDs = [muDs] * 2
+
+    terms = []
+    for k in range(1, NW1):  # on-site energies
+        terms.append((vwk(k, NW, muL, vL, rtype = rtype, Lambda = Lambda)[0], [L(k)], [qn]))
+        terms.append((vwk(k, NW, muR, vR, rtype = rtype, Lambda = Lambda)[0], [R(k)], [qn]))
+    for k in range(1, NS // 2 + 1): # on-site energies
+        terms.append((muL, [S(k)], [qn]))
+    for k in range(NS // 2 + 1, NS + 1): # on-site energies
+        terms.append((muR, [S(k)], [qn]))
+
+    terms.append((muDs[0], [D(1)], [dn1]))
+    terms.append((muDs[1], [D(1)], [dn2]))
+    terms.append((vS, [D(1)], [dx]))
+
+    for k in range(1, NW1):  #  hopping to sys
+        terms.append((vwk(k, NW, muL, vL, rtype = rtype, Lambda = Lambda)[1], [S(1), L(k)], [qcp, qc]))
+        terms.append((vwk(k, NW, muL, vL, rtype = rtype, Lambda = Lambda)[1], [L(k), S(1)], [qcp, qc]))
+        terms.append((vwk(k, NW, muR, vR, rtype = rtype, Lambda = Lambda)[1], [R(k), S(NS)], [qcp, qc]))
+        terms.append((vwk(k, NW, muR, vR, rtype = rtype, Lambda = Lambda)[1], [S(NS), R(k)], [qcp, qc]))
+
+    for k in range(1, NS):
+        terms.append((vLR, [S(k), S(k+1)], [qcp, qc]))
+        terms.append((vLR, [S(k+1), S(k)], [qcp, qc]))
+
+    # add Coulomb interactions
+    for k in range(1, NS + 1):
+        terms.append((U, (D(1), S(k)), [dn1 - dI / 2, qn - qI / 2]))
+
+    Hterms = [mps.Hterm(v, tuple(s2i[x] for x in p), o) for v, p, o in terms]
+    if Hdebug:
+        M = draw_ham(terms, s2i, i2s)
+    else:
+        M = None
+
+    H = mps.generate_mpo(II, Hterms)
+    return H, M
+
+
+
+
+# def Hamiltonian_dpt_logdiscretized(NW, NS, muL, muR, muDs, vS, U, w0=1, order = [], sym='U1', Hdebug = False, rtype='log', Lambda=None, **config_kwargs):
+#     """ generate mpo for dpt model in mixed basis """
+
+#     qI, qc, qcp, qn, dx, dn1, dn2, dI, m12, m21 = local_operators(sym=sym, **config_kwargs)
+#     #
+#     vL = vR = vLR = w0
+#     #
+#     NW1 = NW + 1
+
+#     sites = order
+
+#     # here sites are ordered in position
+#     s2i = {s: i for i, s in enumerate(sites)}
+#     i2s = {i: s for i, s in enumerate(sites)}
+#     II = mps.product_mpo([dI if 'D' in site else qI for site in sites])
+
+#     try:
+#         lD = len(muDs)
+#         assert lD == 2
+#     except TypeError:
+#         muDs = [muDs] * 2
+
+#     terms = []
+#     for k in range(1, NW1):  # on-site energies
+#         terms.append(( vwk(k, NW, muL, vL, rtype = rtype, Lambda = Lambda)[0], [L(k)], [qn]))
+#         terms.append(( vwk(k, NW, muR, vR, rtype = rtype, Lambda = Lambda)[0], [R(k)], [qn]))
+#     for k in range(1, NS // 2 + 1): # on-site energies
+#         terms.append((muL, [S(k)], [qn]))
+#     for k in range(NS // 2 + 1, NS + 1): # on-site energies
+#         terms.append((muR, [S(k)], [qn]))
+
+#     terms.append((muDs[0], [D(1)], [dn1]))
+#     terms.append((muDs[1], [D(1)], [dn2]))
+#     terms.append((vS, [D(1)], [dx]))
+
+#     for k in range(1, NW1):  #  hopping to sys
+#         terms.append((vwk(k, NW, muL, vL, rtype = rtype, Lambda = Lambda)[1], [S(1), L(k)], [qcp, qc]))
+#         terms.append((vwk(k, NW, muL, vL, rtype = rtype, Lambda = Lambda)[1], [L(k), S(1)], [qcp, qc]))
+#         terms.append((vwk(k, NW, muR, vR, rtype = rtype, Lambda = Lambda)[1], [R(k), S(NS)], [qcp, qc]))
+#         terms.append((vwk(k, NW, muR, vR, rtype = rtype, Lambda = Lambda)[1], [S(NS), R(k)], [qcp, qc]))
+
+#     for k in range(1, NS):
+#         terms.append((vLR, [S(k), S(k+1)], [qcp, qc]))
+#         terms.append((vLR, [S(k+1), S(k)], [qcp, qc]))
+
+#     # add Coulomb interactions
+#     for k in range(1, NS + 1):
+#         terms.append((U, (D(1), S(k)), [dn1 - dI / 2, qn - qI / 2]))
+
+#     Hterms = [mps.Hterm(v, tuple(s2i[x] for x in p), o) for v, p, o in terms]
+#     if Hdebug:
+#         M = draw_ham(terms, s2i, i2s)
+#     else:
+#         M = None
+
+#     H = mps.generate_mpo(II, Hterms)
+#     return H, M
+
+
+
+
+def draw_ham(terms, s2i, i2s):
+
+    L = len(s2i)
+    M = np.zeros((L, L), dtype = '<U30')
+
+    for i in range(L):
+        for j in range(L):
+            M[i, j] = ''
+
+
+    for coup, ss, _ in terms:
+
+        if len(ss) == 1:
+            ind = s2i[ss[0]]
+
+            if M[ind, ind] == '':
+                M[ind, ind] = i2s[ind] + i2s[ind] + ':'
+
+            M[ind, ind] += ' + ' + str(coup)[:8]
+
+
+        else:
+            ind1 = s2i[ss[0]]
+            ind2 = s2i[ss[1]]
+
+            if M[ind1, ind2] == '':
+                M[ind1, ind2] = i2s[ind1] + i2s[ind2] + ':'
+            M[ind1, ind2] += ' + ' + str(coup)[:8]  
+
+
+    print(M)
+    return M
