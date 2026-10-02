@@ -139,6 +139,21 @@ def check_fail():
                 os.remove(data)
 
     
+def change_iter():
+
+    fs = glob( f'{getcwd()}/U*')
+    for f in fs:
+
+        with open(f'{f}/dptpara.json', 'r') as infile:
+            para = json.load(infile)
+
+        new = para
+        new['max2'] = 30
+
+        with open(f'{f}/dptpara.json', 'w') as out:
+            json.dump(new, out, indent = 4)
+
+        remove( f'{f}/CALC_FIN')
 
 
 
@@ -220,4 +235,5 @@ if __name__ == '__main__':
     #changetime_flat()
     #check_stale()
     #check_fail()
-    check_repeated()
+    #check_repeated()
+    change_iter()
