@@ -187,6 +187,7 @@ def run_evolution(psi, NW, NS, U, muL, muR, vS0, vS1, mapping, order, merge, sym
 
 
     opts_svd = {"D_total": D_total, 'tol': tdvptol}
+    opts_expmv = {'hermitian': True, 'tol': 1e-12}
     fprint("Running time evolution ... ")
 
     for t0, t1, stage in [(0, tswitch, 1), (tswitch, tfin, 2)]:
@@ -220,7 +221,7 @@ def run_evolution(psi, NW, NS, U, muL, muR, vS0, vS1, mapping, order, merge, sym
 
         start_time = time.time()
         #fprint(times)
-        for step in mps.tdvp_(psi, H, times, method='12site', dt=dt, opts_svd=opts_svd, 
+        for step in mps.tdvp_(psi, H, times, method='12site', dt=dt, opts_svd=opts_svd, opts_expmv=opts_expmv,
                               yield_initial=True if lasttime == -1 else False, 
                               subtract_E=True):
 

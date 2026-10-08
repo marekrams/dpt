@@ -21,5 +21,6 @@
     "merge": true,
     "finaltol": 1e-05,
     "rtype": "sin-transform",
-    "Lambda": null
+    "Lambda": null,
+    "GPU" : false
 }

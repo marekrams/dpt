@@ -2,11 +2,16 @@
 
 c=$(date +%s)
 TH=1
+# This machine's four L3 cache groups, using physical cores only.
+cpu_sets=(0-7 8-15 16-23 24-31)
+job=0
 name="vs0.75"
 descp=(U*)
 d=$(pwd)
 for f in ${~descp}
 do
+	cpu_set=${cpu_sets[$((job % 4 + 1))]}
+	((job += 1))
 	let c=c+1
 	rm ${f}/log*
 	full=${d}/$f
