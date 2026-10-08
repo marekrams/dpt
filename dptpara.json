@@ -1,7 +1,7 @@
 {
     "U": 5.0,
-    "L": 64,
-    "R": 64,
+    "L": 2,
+    "R": 2,
     "tswitch": 0,
     "tfin": 50,
     "timestep": 0.125,
@@ -14,7 +14,7 @@
     "order": "LSDSR",
     "lo": 0.5,
     "hi": 1.0,
-    "searchmode": "GS",
+    "searchmode": "iterative",
     "max1": 256,
     "max2": 64,
     "SB": 0.0,

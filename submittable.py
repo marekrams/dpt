@@ -150,7 +150,11 @@ def initial_state(NW, NS, U, muL, muR, vS0, alpha, mapping, order, merge, sym, D
         n2 = mps.vdot(psi, On2, psi)
         fprint("Done. n1 = ", n1, "n2 = ", n2)
 
-    psidata = psi.save_to_dict()
+    try:
+        psidata = psi.save_to_dict()
+    except Exception as e:
+        psidata = psi.to_dict()
+        
     with open(f'{curpath}init.npy', 'wb') as f:
         np.save(f, psidata, allow_pickle=True)
     
@@ -258,7 +262,10 @@ def run_evolution(psi, NW, NS, U, muL, muR, vS0, vS1, mapping, order, merge, sym
             total += end_time - start_time
             fprint(f"Rolling average TDVP: {total/cnt}")
 
-            psidata = psi.save_to_dict()
+            try:
+                psidata = psi.save_to_dict()
+            except Exception as e:
+                psidata = psi.to_dict()
             #fprint(psidata)
             # with open(f'{curpath}TDVPlast.npy', 'wb') as f:
             #     np.save(f, psidata, allow_pickle=True)
