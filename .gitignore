@@ -11,6 +11,7 @@ GS/*
 log*
 results*/*
 *repeat*/*
+CAL*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
